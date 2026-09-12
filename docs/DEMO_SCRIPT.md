@@ -1,17 +1,25 @@
 # PAVHAN — 5-minute demo script
 
-For the SIH jury round. Practise the order; the surprises land better than the
-slides do.
+For the SIH jury round (Problem Statement 26090). Practise the order; the
+surprises land better than the slides do.
 
 ## Before you start
 
 ```bash
-./run.sh
+./run.sh          # Windows: run.bat
 ```
 
-Open **http://localhost:5173** in **Chrome**, volume up, microphone allowed.
-Have a real craft object and your phone ready if you can — a live photo is far
-more convincing than a file upload.
+Open **http://localhost:8000** in **Chrome or Edge**, volume up, microphone
+allowed. Have a real craft object and your phone ready if you can — a live photo
+is far more convincing than a file upload.
+
+**Use the localhost address exactly as printed.** Browsers disable the
+microphone on any other `http://` address, silently. If you must present from
+another device, put it behind HTTPS first (`ngrok http 8000`).
+
+Sixty seconds before you present, check the Speak screen shows
+*"✅ माइक तैयार है"*. If it shows a warning instead, it names the exact blocker
+and the fix — read it and act on it then, not in front of the jury.
 
 Optional reset to a clean catalogue: `curl -X POST localhost:8000/api/admin/reseed`
 
@@ -63,8 +71,9 @@ climbing.
 Then stop mid-sentence deliberately and show that it **asks you the next
 question**: *"इसे बनाने में कितने दिन लगे?"* — it knows what it has not been told.
 
-> The demo-safe version of this step is the "नमूना भर दीजिए" button, if the
-> venue is loud.
+> If the venue is loud, open **"बोल नहीं पा रहे? तैयार नमूना चुनिए"** and pick
+> any of the six crafts. Pick a *different* one each time you rehearse — the
+> whole point is that the listing, price and buyers change with it.
 
 ## 2:45 — The listing (30s)
 
@@ -131,6 +140,16 @@ purely to prove this: *two different photos must read differently* and *two
 different voice notes must produce different crafts and different prices*. Then
 upload something absurd — a photo of a shoe — and show it drop to low confidence
 and ask the artisan to confirm, instead of confidently claiming a saree.
+
+The fastest live proof is the sample picker: choose the bamboo basket, then the
+Banarasi saree, and put the two results side by side. Different craft, different
+price band, completely different buyers.
+
+**"Does it work in Hindi, or is it just Hindi buttons?"**
+Toggle the अ / A button on any screen. The categories, materials, regions, craft
+names, pricing-breakdown notes, buyer-match reasons and photo coaching all flip,
+not just the labels. Then open a price breakdown in Hindi and read a line of the
+arithmetic aloud — that is the screen an artisan shows a trader.
 
 **"Does it need an internet connection / an API key?"**
 No key at all. The vision, NLP, pricing, matching and search engines are ours and

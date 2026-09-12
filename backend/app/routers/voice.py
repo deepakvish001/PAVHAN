@@ -5,6 +5,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Query
 
 from ..services import voice_scripts as vs
+from ..services.taxonomy import label_pack
 
 router = APIRouter(prefix="/api/voice", tags=["voice"])
 
@@ -46,6 +47,15 @@ def all_scripts(lang: str = "hi") -> dict:
         "screens": {k: v.get(lang, v.get("en", "")) for k, v in vs.SCREENS.items()},
         "tips": {role: vs.tips(role, lang) for role in vs.TIPS},
     }
+
+
+@router.get("/labels")
+def labels(lang: str = "hi") -> dict:
+    """Hindi names for the data itself — craft types, categories, materials,
+    regions, colours — so a Hindi screen is not half in English."""
+    if lang != "hi":
+        return {"lang": lang, "labels": {}}
+    return {"lang": "hi", "labels": label_pack()}
 
 
 @router.get("/roles")

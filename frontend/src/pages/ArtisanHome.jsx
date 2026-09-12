@@ -7,7 +7,7 @@ import { artisanEnquiries, dashboard, listUsers, marketContext } from '../api/cl
 
 export default function ArtisanHome() {
   const navigate = useNavigate()
-  const { t, lang, user, setUser, scripts, sayRaw } = useApp()
+  const { t, lang, user, setUser, scripts, sayRaw, L } = useApp()
   const [data, setData] = useState(null)
   const [enquiries, setEnquiries] = useState([])
   const [market, setMarket] = useState(null)
@@ -62,7 +62,7 @@ export default function ArtisanHome() {
     <>
       <TopBar
         title={data?.artisan?.name || 'PAVHAN'}
-        subtitle={`${data?.artisan?.craft_focus || ''} · ${data?.artisan?.region || ''}`}
+        subtitle={`${L(data?.artisan?.craft_focus) || ''} · ${L(data?.artisan?.region) || ''}`}
       />
       <Screen>
         <div className="page stack">

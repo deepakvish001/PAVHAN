@@ -454,3 +454,99 @@ CATEGORIES = sorted({c.category for c in CRAFTS})
 
 def craft_by_key(key: str) -> Craft | None:
     return CRAFT_INDEX.get(key)
+
+
+# ---------------------------------------------------------------------------
+# Hindi labels for the data itself.
+#
+# Translating the UI chrome but leaving "Pottery & Ceramics", "Pure Silk" and
+# "Varanasi" in English gives a half-Hindi screen, which reads worse than
+# either language on its own. These dictionaries let any data token coming out
+# of the API be rendered in the artisan's language.
+# ---------------------------------------------------------------------------
+CATEGORY_HI = {
+    "Textiles": "वस्त्र",
+    "Pottery & Ceramics": "मिट्टी और सिरेमिक",
+    "Folk Art": "लोक कला",
+    "Metalwork": "धातु शिल्प",
+    "Jewellery": "आभूषण",
+    "Wood Craft": "काष्ठ शिल्प",
+    "Natural Fibre": "प्राकृतिक रेशा",
+}
+
+MATERIAL_HI = {
+    "Pure Silk": "शुद्ध रेशम", "Cotton": "सूती", "Mulmul": "मलमल",
+    "Pashmina Wool": "पश्मीना ऊन", "Wool": "ऊन", "Khadi": "खादी",
+    "Terracotta Clay": "टेराकोटा मिट्टी", "Quartz Ceramic": "क्वार्ट्ज़ सिरेमिक",
+    "Brass": "पीतल", "Bell Metal": "कांसा", "Brass / Bell Metal": "पीतल / कांसा",
+    "Zinc Alloy": "जस्ता मिश्र", "Zinc Alloy with Silver Inlay": "जस्ता, चांदी की जड़ाई",
+    "Bamboo": "बाँस", "Treated Bamboo": "उपचारित बाँस", "Cane": "बेंत",
+    "Jute": "जूट", "Golden Jute": "सुनहरा जूट", "Wood": "लकड़ी",
+    "Ivory Wood with Lac": "हाथीदाँत लकड़ी, लाख", "Handmade Paper": "हस्तनिर्मित कागज़",
+    "Leather": "चमड़ा", "Stone": "पत्थर", "Silver": "चांदी", "Copper": "तांबा",
+    "Canvas": "कैनवास", "Zari": "ज़री", "Linen": "लिनन", "Velvet": "मखमल",
+    "Glass": "कांच", "Sea Shell": "सीप", "Coconut Shell": "नारियल खोल",
+    "Sabai Grass": "सबाई घास", "Wrought Iron": "लोहा",
+    "Cotton / Mulmul": "सूती / मलमल", "Natural-Dyed Cotton": "प्राकृतिक रंगी सूती",
+    "Khaddar Cotton with Silk Floss": "खद्दर सूती, रेशमी धागा",
+    "Recycled Cotton Layers": "पुनर्चक्रित सूती परतें",
+    "Cow-dung Wash on Canvas": "गोबर लेपित कैनवास",
+    "Treated Cloth Canvas": "उपचारित कपड़ा",
+    "Cotton Cloth with Stone Colours": "सूती कपड़ा, पत्थर के रंग",
+    "Brass with Vitreous Enamel": "पीतल, मीना रंग",
+}
+
+REGION_HI = {
+    "Varanasi": "वाराणसी", "Banaras": "बनारस", "Uttar Pradesh": "उत्तर प्रदेश",
+    "Srinagar": "श्रीनगर", "Kashmir": "कश्मीर", "Jammu and Kashmir": "जम्मू-कश्मीर",
+    "Jaipur": "जयपुर", "Rajasthan": "राजस्थान", "Jodhpur": "जोधपुर",
+    "Udaipur": "उदयपुर", "Nathdwara": "नाथद्वारा", "Bidar": "बीदर",
+    "Karnataka": "कर्नाटक", "Channapatna": "चन्नापटना", "Lucknow": "लखनऊ",
+    "Madhubani": "मधुबनी", "Mithila": "मिथिला", "Bihar": "बिहार",
+    "Bastar": "बस्तर", "Chhattisgarh": "छत्तीसगढ़", "Jharkhand": "झारखंड",
+    "West Bengal": "पश्चिम बंगाल", "Kolkata": "कोलकाता", "Bankura": "बांकुड़ा",
+    "Bolpur": "बोलपुर", "Assam": "असम", "Tripura": "त्रिपुरा",
+    "Nagaland": "नागालैंड", "North East": "पूर्वोत्तर", "Punjab": "पंजाब",
+    "Patiala": "पटियाला", "Odisha": "ओडिशा", "Puri": "पुरी",
+    "Raghurajpur": "रघुराजपुर", "Palghar": "पालघर", "Maharashtra": "महाराष्ट्र",
+    "Andhra Pradesh": "आंध्र प्रदेश", "Srikalahasti": "श्रीकालहस्ति",
+    "Machilipatnam": "मछलीपट्टनम", "Tamil Nadu": "तमिलनाडु",
+    "Gorakhpur": "गोरखपुर", "Kutch": "कच्छ", "Gujarat": "गुजरात",
+    "Bhagalpur": "भागलपुर", "Moradabad": "मुरादाबाद", "Agra": "आगरा",
+    "Delhi": "दिल्ली", "India": "भारत",
+}
+
+ORG_TYPE_HI = {
+    "Retail Chain": "खुदरा शृंखला", "Export House": "निर्यात गृह",
+    "Hospitality": "होटल उद्योग", "Online Marketplace": "ऑनलाइन बाज़ार",
+    "Social Enterprise": "सामाजिक संस्था", "Boutique": "बुटीक",
+    "Corporate Gifting": "कॉर्पोरेट उपहार", "Institution": "संस्थान",
+}
+
+TECHNIQUE_HI = {
+    "Handwoven": "हाथ से बुना", "Handloom": "हथकरघा", "Hand-painted": "हाथ से चित्रित",
+    "Hand Embroidery": "हाथ की कढ़ाई", "Hand-carved": "हाथ से तराशा",
+    "Block Printed": "ब्लॉक छपाई", "Hand-moulded": "हाथ से ढाला",
+    "Wheel-thrown": "चाक पर बना", "Lost-wax Cast": "मोम विधि से ढला",
+    "Zari Work": "ज़री का काम", "Inlay Work": "जड़ाई का काम", "Handmade": "हस्तनिर्मित",
+}
+
+
+def colour_labels() -> dict[str, str]:
+    """English -> Hindi colour names, taken from the vision module's anchors."""
+    from .vision import COLOUR_ANCHORS
+
+    return {name: name_hi for name, name_hi, _ in COLOUR_ANCHORS}
+
+
+def label_pack() -> dict[str, dict[str, str]]:
+    """Everything the app needs to render API data in Hindi."""
+    return {
+        "crafts": {c.name: c.name_hi for c in CRAFTS},
+        "categories": CATEGORY_HI,
+        "materials": MATERIAL_HI,
+        "regions": REGION_HI,
+        "colours": colour_labels(),
+        "org_types": ORG_TYPE_HI,
+        "techniques": TECHNIQUE_HI,
+    }

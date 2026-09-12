@@ -60,6 +60,51 @@ export function speechSupport() {
   return { supported: true, reason: null }
 }
 
+/**
+ * Why can't this browser hear me? Answer it precisely, before the user
+ * presses anything, because "the mic doesn't work" is almost never the mic.
+ */
+export async function micDiagnostics() {
+  if (typeof window === 'undefined') return null
+  const host = location.hostname
+  const localhost = ['localhost', '127.0.0.1', '[::1]'].includes(host)
+  const secure = window.isSecureContext || localhost
+  const hasApi = !!(window.SpeechRecognition || window.webkitSpeechRecognition)
+  const hasMedia = !!navigator.mediaDevices?.getUserMedia
+  const ua = navigator.userAgent
+  const browser = /Edg\//.test(ua) ? 'Edge'
+    : /OPR\//.test(ua) ? 'Opera'
+    : /Chrome\//.test(ua) ? 'Chrome'
+    : /Firefox\//.test(ua) ? 'Firefox'
+    : /Safari\//.test(ua) ? 'Safari'
+    : 'this browser'
+
+  let permission = 'unknown'
+  try {
+    const status = await navigator.permissions?.query({ name: 'microphone' })
+    if (status) permission = status.state
+  } catch { /* Firefox and Safari do not expose the microphone permission */ }
+
+  let devices = null
+  try {
+    const list = await navigator.mediaDevices?.enumerateDevices()
+    if (list) devices = list.filter((d) => d.kind === 'audioinput').length
+  } catch { /* needs permission on some browsers */ }
+
+  // The first blocker in this list is the one actually stopping them.
+  let blocker = null
+  if (!secure) blocker = 'insecure'
+  else if (!hasMedia) blocker = 'nomedia'
+  else if (!hasApi) blocker = 'noapi'
+  else if (permission === 'denied') blocker = 'denied'
+  else if (devices === 0) blocker = 'nodevice'
+
+  return {
+    origin: location.origin, host, localhost, secure, hasApi, hasMedia,
+    browser, permission, devices, blocker,
+  }
+}
+
 export default function useSpeechRecognition({ lang = 'hi', onFinal } = {}) {
   const [listening, setListening] = useState(false)
   const [finalText, setFinalText] = useState('')

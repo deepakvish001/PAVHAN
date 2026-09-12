@@ -180,7 +180,7 @@ export function ProductImage({ product, height = 96, radius = 14, style = {} }) 
 
 export function ProductCard({ product, onClick, compact = false }) {
   const navigate = useNavigate()
-  const { t } = useApp()
+  const { t, L } = useApp()
   const go = onClick || (() => navigate(`/product/${product.id}`))
 
   if (compact) {
@@ -196,7 +196,7 @@ export function ProductCard({ product, onClick, compact = false }) {
             {product.title.length > 38 ? `${product.title.slice(0, 36)}…` : product.title}
           </div>
           <div style={{ fontSize: 10.5, color: 'var(--muted)', margin: '3px 0 6px' }}>
-            {product.region}
+            {L(product.region)}
           </div>
           <Money value={product.price} className="" />
         </div>
@@ -214,7 +214,7 @@ export function ProductCard({ product, onClick, compact = false }) {
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
         <div style={{ fontWeight: 700, fontSize: 14.5, lineHeight: 1.3 }}>{product.title}</div>
         <div style={{ fontSize: 11.5, color: 'var(--muted)' }}>
-          {product.craft_type} · {product.region}
+          {L(product.craft_type)} · {L(product.region)}
         </div>
         <div className="row" style={{ gap: 6, flexWrap: 'wrap', marginTop: 'auto' }}>
           <span className="pill gold"><Money value={product.price} /></span>

@@ -12,7 +12,7 @@ import { buyerRecommendations, listBuyers } from '../api/client'
  */
 export default function B2BHome() {
   const navigate = useNavigate()
-  const { t, lang } = useApp()
+  const { t, lang, L } = useApp()
   const [buyers, setBuyers] = useState([])
   const [active, setActive] = useState(null)
   const [recs, setRecs] = useState(null)
@@ -68,7 +68,7 @@ export default function B2BHome() {
                     {b.name}
                   </div>
                   <div className="muted" style={{ fontSize: 10, marginTop: 3 }}>
-                    {b.org_type} · {b.city}
+                    {L(b.org_type)} · {L(b.city)}
                   </div>
                 </button>
               ))}
@@ -87,8 +87,9 @@ export default function B2BHome() {
                 [t('बजट', 'Budget'), `${rupees(active.budget_min)} – ${rupees(active.budget_max)}`],
                 [t('सामान्य मात्रा', 'Typical order'), `${active.typical_order_qty} ${t('पीस', 'pcs')}`],
                 [t('अधिकतम समय', 'Max lead time'), `${active.max_lead_time_days} ${t('दिन', 'days')}`],
-                [t('श्रेणियाँ', 'Categories'), active.categories.join(', ')],
-                [t('पसंदीदा क्षेत्र', 'Regions'), active.preferred_regions.join(', ') || t('कोई भी', 'Any')],
+                [t('श्रेणियाँ', 'Categories'), active.categories.map(L).join(', ')],
+                [t('पसंदीदा क्षेत्र', 'Regions'),
+                 active.preferred_regions.map(L).join(', ') || t('कोई भी', 'Any')],
                 [t('प्रमाणपत्र', 'Certifications'), active.certifications.join(', ') || '—'],
               ].map(([label, value]) => (
                 <div
@@ -142,7 +143,7 @@ export default function B2BHome() {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 700, fontSize: 13.5, lineHeight: 1.3 }}>{r.title}</div>
                   <div className="muted" style={{ fontSize: 11, margin: '3px 0 6px' }}>
-                    {r.craft_type} · {r.region} · MOQ {r.moq}
+                    {L(r.craft_type)} · {L(r.region)} · MOQ {r.moq}
                   </div>
                   <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
                     <span className="pill gold mono">{rupees(r.unit_price)}/{t('पीस', 'pc')}</span>

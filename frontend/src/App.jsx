@@ -23,12 +23,13 @@ function RequireRole({ children }) {
 }
 
 export default function App() {
-  const { assistant } = useApp()
+  const { cancelUnlessProtected } = useApp()
   const { pathname } = useLocation()
 
-  // Stop the guide mid-sentence when the user navigates away — nothing feels
-  // more broken than a voice describing the previous screen.
-  useEffect(() => { assistant.cancel() }, [pathname]) // eslint-disable-line
+  // Stop the guide when the user navigates away — nothing feels more broken
+  // than a voice describing the previous screen. The one exception is a
+  // greeting that was deliberately started alongside a navigation.
+  useEffect(() => { cancelUnlessProtected() }, [pathname]) // eslint-disable-line
 
   return (
     <div className="app-frame">

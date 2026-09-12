@@ -7,7 +7,7 @@ import { listProducts, listUsers, priceForProduct } from '../api/client'
 
 export default function MyProducts() {
   const navigate = useNavigate()
-  const { t, lang, user, setUser } = useApp()
+  const { t, lang, user, setUser, L } = useApp()
   const [products, setProducts] = useState(null)
   const [repriced, setRepriced] = useState({})
 
@@ -65,7 +65,7 @@ export default function MyProducts() {
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontWeight: 700, fontSize: 14, lineHeight: 1.3 }}>{p.title}</div>
                       <div className="muted" style={{ fontSize: 11.5, margin: '3px 0 6px' }}>
-                        {p.material} · {p.region}
+                        {L(p.material)} · {L(p.region)}
                       </div>
                       <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
                         <span className="pill gold"><Money value={p.price} /></span>

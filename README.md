@@ -1,6 +1,6 @@
 # PAVHAN — AI-Powered Growth for Artisan Craft
 
-**Smart India Hackathon · Problem Statement 26060**
+**Smart India Hackathon · Problem Statement 26090**
 
 An Indian artisan can make a Banarasi saree worth ₹35,000 and be paid ₹14,000 for
 it at the door, because the person who knows what it is worth is never the person
@@ -34,27 +34,45 @@ somebody talking them through it, not a tooltip.
 ```bash
 git clone https://github.com/deepakvish001/sih26060.git
 cd sih26060
-./run.sh
+./run.sh                 # macOS / Linux / Git Bash
 ```
 
-Then open **http://localhost:5173**. The API is on **http://localhost:8000**, with
-interactive docs at **/docs**.
+On Windows, double-click **`run.bat`** (or run it from Command Prompt).
 
-Or run the two halves separately:
+Either one installs what it needs on the first run, builds the app, and then
+prints:
+
+```
+    App   →  http://localhost:8000
+    API   →  http://localhost:8000/docs
+```
+
+One process, one port, everything served together. Open it in **Chrome or
+Edge**.
+
+> ### Use the `localhost` address exactly as printed
+>
+> Browsers switch the microphone **off** on any address that is neither
+> `localhost` nor `https://`. If you open the app through your machine's LAN
+> address (`http://192.168.x.x:8000`) the mic will be dead and Chrome will not
+> tell you why — it fails silently. This is the single most common reason a
+> voice feature looks broken.
+>
+> PAVHAN detects this and says so: the Speak screen carries a diagnostics panel
+> that reports the exact blocker (insecure address, denied permission, no input
+> device, unsupported browser) and what to do about it. Tap it to see the full
+> readout.
+>
+> To demo from a phone, either run it on the phone itself, or put it behind
+> HTTPS (a tunnel such as `ngrok http 8000` is enough) — the mic then works.
+
+Other modes:
 
 ```bash
-./run.sh backend     # FastAPI on :8000
-./run.sh frontend    # React (Vite) on :5173
-./run.sh test        # 42-check API smoke test against a running server
+./run.sh dev        # two ports with hot reload: API :8000, app :5173
+./run.sh backend    # API only
+./run.sh test       # 42-check API smoke test against a running server
 ```
-
-> **The microphone needs `localhost` or `https://`.** Browsers disable
-> `getUserMedia` and the Web Speech API on plain `http://` addresses that are not
-> localhost — this is the single most common reason a voice feature appears
-> "broken". Use `localhost` in development, and serve over HTTPS in production.
-> Chrome and Edge give the best Hindi recognition; Safari and Firefox fall back
-> to server transcription or typing, and PAVHAN tells the user which one is
-> active rather than failing silently.
 
 ### Optional: connect Claude
 

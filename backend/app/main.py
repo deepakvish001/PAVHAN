@@ -6,9 +6,9 @@ import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from . import __version__
@@ -22,6 +22,11 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(messag
 log = logging.getLogger("pavhan")
 
 SEED_MEDIA_DIR = Path(__file__).resolve().parent.parent / "seed_media"
+# Built single-page app. When it exists, this one server hosts everything, so
+# the whole demo runs on http://localhost:8000 — which matters beyond
+# convenience: the microphone and speech APIs are disabled by browsers on any
+# origin that is neither localhost nor https.
+DIST_DIR = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
 
 
 @asynccontextmanager
@@ -68,8 +73,17 @@ if SEED_MEDIA_DIR.exists():
     app.mount("/seed", StaticFiles(directory=SEED_MEDIA_DIR), name="seed")
 
 
+if DIST_DIR.exists():
+    app.mount("/assets", StaticFiles(directory=DIST_DIR / "assets"), name="assets")
+    log.info("Serving the built app from %s", DIST_DIR)
+
+
 @app.get("/", include_in_schema=False)
-def root() -> RedirectResponse:
+def root():
+    """The app when it has been built, the API docs otherwise."""
+    index = DIST_DIR / "index.html"
+    if index.exists():
+        return FileResponse(index)
     return RedirectResponse("/docs")
 
 
@@ -83,6 +97,20 @@ def health() -> dict:
         "engines": llm.status(),
         "indexed_listings": len(search_engine.index.docs),
     }
+
+
+@app.get("/{full_path:path}", include_in_schema=False)
+def spa_fallback(full_path: str):
+    """Client-side routes (/artisan, /product/abc) must return the app shell.
+
+    Registered last so it never shadows /api, /docs, /media or /seed.
+    """
+    if full_path.startswith(("api/", "docs", "redoc", "openapi.json", "media/", "seed/", "assets/")):
+        raise HTTPException(404, "Not found")
+    index = DIST_DIR / "index.html"
+    if index.exists():
+        return FileResponse(index)
+    return RedirectResponse("/docs")
 
 
 @app.post("/api/admin/reseed", tags=["meta"])

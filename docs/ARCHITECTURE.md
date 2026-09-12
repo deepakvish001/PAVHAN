@@ -72,6 +72,31 @@ the product also carried nine tags they had never mentioned. `_category_fit`
 now checks the primary category first and falls back to progressively weaker
 evidence. Strong matches went from 0 to 6 on the same data.
 
+## Two bugs that only showed up on someone else's laptop
+
+**The steps were declared inside the page component.** `PhotoStep`, `VoiceStep`
+and the rest lived inside `AddProduct`, so every parent render produced a new
+component *type*, React unmounted the old one, and the step's state went with
+it. Switching language halfway through the flow silently threw away the photo
+and the transcript the artisan had just recorded. They are module-level
+components now, and the flow's state lives in the parent. A React lesson worth
+keeping: defining a component inside another component is never a cosmetic
+choice.
+
+**The voice guide talked over itself.** Picking a role greets the artisan and
+navigates at the same time, and the screen it lands on immediately spoke its own
+script — which calls `speechSynthesis.cancel()` first, cutting the greeting off
+about a second in. The fix has two halves: a greeting started through
+`sayProtected` holds the floor for roughly as long as it takes to read, and
+screen scripts queue behind it instead of interrupting. The hold is released
+early when the utterance genuinely ends, so nothing waits out an estimate.
+
+Testing that second one needed a fake speech engine. Headless Chromium ships no
+voices, so every utterance "ends" instantly and the overlap cannot be
+reproduced; the regression test installs a `speechSynthesis` stub whose
+utterances take a realistic reading time, which is the only way the bug is
+visible outside a real laptop.
+
 ## Hindi is a first-class language, not a translation layer
 
 Three things follow from taking this seriously:
@@ -91,6 +116,15 @@ anyone who knows the craft.
 notes, season labels, comparables, match explanations, photo coaching and gap
 warnings all carry a `_hi` variant. An explanation the artisan cannot read is
 not an explanation.
+
+**The data is translated too.** Translating the UI chrome while leaving
+"Pottery & Ceramics · Varanasi · Pure Silk" in English produces a half-Hindi
+screen that reads worse than either language alone. `taxonomy.label_pack()`
+serves Hindi names for craft types, categories, materials, regions, colours,
+techniques and buyer types; the app pulls them once per language change and
+`L(value)` renders any API token in the current language, falling through
+unchanged when there is no Hindi name. Product titles are deliberately left
+alone — those are the artisan's own words, not ours to rewrite.
 
 ## Pricing for dignity, then for the market
 

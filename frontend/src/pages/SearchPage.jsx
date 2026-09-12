@@ -17,7 +17,7 @@ const SORTS = [
 export default function SearchPage() {
   const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
-  const { t, lang, toast } = useApp()
+  const { t, lang, toast, L } = useApp()
 
   const [q, setQ] = useState(params.get('q') || '')
   const [data, setData] = useState(null)
@@ -181,7 +181,7 @@ export default function SearchPage() {
                           style={{ padding: '6px 11px', fontSize: 11.5 }}
                           onClick={() => applyFilter(key, f.value)}
                         >
-                          {f.value} <span className="muted">{f.count}</span>
+                          {L(f.value)} <span className="muted">{f.count}</span>
                         </button>
                       ))}
                     </div>

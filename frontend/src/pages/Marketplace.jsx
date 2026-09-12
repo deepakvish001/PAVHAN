@@ -7,7 +7,7 @@ import { featuredProducts, listProducts, platformStats, trending } from '../api/
 
 export default function Marketplace() {
   const navigate = useNavigate()
-  const { t, lang } = useApp()
+  const { t, lang, L } = useApp()
   const [featured, setFeatured] = useState([])
   const [all, setAll] = useState([])
   const [tags, setTags] = useState([])
@@ -79,7 +79,7 @@ export default function Marketplace() {
                   className="chip"
                   onClick={() => navigate(`/search?q=${encodeURIComponent(tag)}`)}
                 >
-                  {tag}
+                  {L(tag)}
                 </button>
               ))}
             </div>
@@ -108,7 +108,7 @@ export default function Marketplace() {
                   className={`chip ${category === c ? 'active' : ''}`}
                   onClick={() => setCategory(c)}
                 >
-                  {c}
+                  {L(c)}
                 </button>
               ))}
             </div>

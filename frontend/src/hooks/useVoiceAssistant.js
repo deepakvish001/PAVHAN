@@ -63,7 +63,7 @@ export default function useVoiceAssistant({ lang = 'hi', enabled = true } = {}) 
 
   const speak = useCallback((text, opts = {}) => {
     if (!supported || !enabled || !text) return
-    const { interrupt = true, rate, once } = opts
+    const { interrupt = true, rate, once, onEnd } = opts
 
     if (once) {
       if (spokenRef.current.has(once)) return
@@ -86,9 +86,9 @@ export default function useVoiceAssistant({ lang = 'hi', enabled = true } = {}) 
     utter.pitch = 1
     utter.volume = 1
     utter.onstart = () => setSpeaking(true)
-    utter.onend = () => setSpeaking(false)
-    utter.onerror = () => setSpeaking(false)
-    try { window.speechSynthesis.speak(utter) } catch { setSpeaking(false) }
+    utter.onend = () => { setSpeaking(false); onEnd?.() }
+    utter.onerror = () => { setSpeaking(false); onEnd?.() }
+    try { window.speechSynthesis.speak(utter) } catch { setSpeaking(false); onEnd?.() }
   }, [supported, enabled, lang])
 
   // Release anything queued the first time the user touches the screen.

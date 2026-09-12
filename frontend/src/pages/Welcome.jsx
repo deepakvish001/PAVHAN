@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import { voiceRoles, voiceWelcome, platformStats } from '../api/client'
@@ -13,7 +13,7 @@ const HOME_FOR = { artisan: '/artisan', customer: '/shop', b2b: '/b2b', exporter
  */
 export default function Welcome() {
   const navigate = useNavigate()
-  const { lang, setLang, setRole, setUser, voiceOn, setVoiceOn, sayRaw, assistant } = useApp()
+  const { lang, setLang, setRole, setUser, voiceOn, setVoiceOn, sayRaw, sayProtected, assistant } = useApp()
   const [roles, setRoles] = useState([])
   const [prompt, setPrompt] = useState('')
   const [stats, setStats] = useState(null)
@@ -24,9 +24,11 @@ export default function Welcome() {
     platformStats().then(setStats).catch(() => {})
   }, [lang])
 
-  // The line the user asked for: spoken the moment the app opens.
+  // The opening line, spoken once the moment the app opens.
+  const greeted = useRef(false)
   useEffect(() => {
-    if (!voiceOn || !prompt) return
+    if (!voiceOn || !prompt || greeted.current) return undefined
+    greeted.current = true
     const timer = setTimeout(() => sayRaw(prompt), 700)
     return () => clearTimeout(timer)
   }, [voiceOn, prompt, sayRaw])
@@ -36,10 +38,11 @@ export default function Welcome() {
     setRole(roleKey)
     try {
       const w = await voiceWelcome(roleKey, lang)
-      sayRaw(w.text)
+      // Protected: the greeting keeps playing on the home screen it lands on.
+      sayProtected(w.text)
     } catch { /* the app works without the greeting */ }
     setUser((u) => u || { name: lang === 'hi' ? 'मेहमान' : 'Guest', role: roleKey })
-    setTimeout(() => navigate(HOME_FOR[roleKey] || '/shop'), 820)
+    setTimeout(() => navigate(HOME_FOR[roleKey] || '/shop'), 900)
   }
 
   return (

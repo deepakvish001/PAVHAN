@@ -194,7 +194,7 @@ def seed(db: Session, *, force: bool = False) -> dict:
                 db.delete(row)
         db.commit()
 
-    rng = random.Random(26060)  # deterministic demo data
+    rng = random.Random(26090)  # deterministic demo data (SIH PS number)
     users: list[User] = []
     for spec in ARTISANS:
         user = User(**spec)

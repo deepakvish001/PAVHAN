@@ -6,7 +6,7 @@ import { aiStatus, health, platformStats } from '../api/client'
 
 export default function Profile() {
   const navigate = useNavigate()
-  const { t, lang, setLang, role, setRole, user, voiceOn, setVoiceOn, assistant, sayRaw } = useApp()
+  const { t, lang, setLang, role, setRole, user, voiceOn, setVoiceOn, assistant, sayRaw, L } = useApp()
   const [status, setStatus] = useState(null)
   const [stats, setStats] = useState(null)
 
@@ -41,7 +41,7 @@ export default function Profile() {
                 {user?.name || t('मेहमान', 'Guest')}
               </div>
               <div className="muted" style={{ fontSize: 12, marginTop: 2 }}>
-                {user?.craft_focus || ''} {user?.region ? `· ${user.region}` : ''}
+                {L(user?.craft_focus) || ''} {user?.region ? `· ${L(user.region)}` : ''}
               </div>
             </div>
           </div>
@@ -169,7 +169,7 @@ export default function Profile() {
 
           <div className="center muted" style={{ fontSize: 10.5, lineHeight: 1.7, paddingTop: 6 }}>
             PAVHAN · AI-Powered Growth for Artisan Craft<br />
-            Smart India Hackathon · PS 26060
+            Smart India Hackathon · PS 26090
           </div>
         </div>
       </Screen>

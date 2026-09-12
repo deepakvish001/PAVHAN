@@ -1,0 +1,239 @@
+import { useEffect, useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
+import { useApp } from '../context/AppContext'
+import { Screen, TopBar } from '../components/Shell'
+import {
+  Bar, Loading, Money, ProductCard, ProductImage, ScoreRing, VoiceOrb, rupees,
+} from '../components/ui'
+import { getProduct, placeOrder, similarProducts } from '../api/client'
+
+export default function ProductDetail() {
+  const { id } = useParams()
+  const navigate = useNavigate()
+  const { t, lang, role, toast, sayRaw, voiceOn } = useApp()
+  const [product, setProduct] = useState(null)
+  const [similar, setSimilar] = useState([])
+  const [busy, setBusy] = useState(false)
+  const [qty, setQty] = useState(1)
+
+  useEffect(() => {
+    let alive = true
+    setProduct(null)
+    getProduct(id).then((p) => {
+      if (!alive) return
+      setProduct(p)
+      if (voiceOn) {
+        setTimeout(() => sayRaw(
+          t(`यह ${p.region} में हाथ से बनाई गई है। कीमत ${Math.round(p.price)} रुपये।`,
+            `This piece was handmade in ${p.region}. The price is ${Math.round(p.price)} rupees.`),
+        ), 700)
+      }
+    }).catch(() => {})
+    similarProducts(id).then((s) => { if (alive) setSimilar(s) }).catch(() => {})
+    return () => { alive = false }
+  }, [id]) // eslint-disable-line
+
+  if (!product) {
+    return (<><TopBar title="…" back /><Screen><Loading /></Screen></>)
+  }
+
+  const buy = async () => {
+    setBusy(true)
+    try {
+      const order = await placeOrder({ product_id: product.id, quantity: qty, customer_name: 'PAVHAN Demo' })
+      toast(
+        t(`ऑर्डर हो गया। कारीगर को ₹${Math.round(order.artisan_payout).toLocaleString('en-IN')} जाएँगे।`,
+          `Order placed. ₹${Math.round(order.artisan_payout).toLocaleString('en-IN')} goes to the artisan.`),
+        'ok', 5200,
+      )
+      setProduct({ ...product, stock: product.stock - qty })
+    } catch (err) {
+      toast(err.message, 'err')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const pm = product.pricing_meta || {}
+  const isB2B = role === 'b2b' || role === 'exporter'
+  const unit = isB2B && qty >= 20 ? product.price * (qty >= 50 ? 0.78 : 0.85) : product.price
+
+  return (
+    <>
+      <TopBar title={product.craft_type || t('सामान', 'Product')} back />
+      <Screen>
+        <ProductImage product={product} height={250} radius={0} style={{ width: '100%' }} />
+
+        <div className="page stack" style={{ marginTop: -18, position: 'relative' }}>
+          <div className="card">
+            <div className="row" style={{ gap: 6, flexWrap: 'wrap', marginBottom: 9 }}>
+              {product.gi_tagged && <span className="pill leaf">🏅 GI {t('प्रमाणित', 'tagged')}</span>}
+              <span className="pill">{product.category}</span>
+              {product.handmade && <span className="pill gold">✋ {t('हस्तनिर्मित', 'Handmade')}</span>}
+            </div>
+            <h2 style={{ fontSize: 20, lineHeight: 1.28 }}>{product.title}</h2>
+            <p className="muted" style={{ fontSize: 13, lineHeight: 1.6, margin: '8px 0 0' }}>
+              {product.short_description}
+            </p>
+            <div className="row-between" style={{ marginTop: 14 }}>
+              <div>
+                <div className="mono" style={{ fontSize: 25, fontWeight: 800, color: 'var(--madder)' }}>
+                  {rupees(unit * qty)}
+                </div>
+                {isB2B && unit < product.price && (
+                  <div className="muted" style={{ fontSize: 11 }}>
+                    {rupees(unit)} × {qty} · {t('थोक छूट लागू', 'bulk rate applied')}
+                  </div>
+                )}
+              </div>
+              <ScoreRing value={product.quality_score} label={t('गुणवत्ता', 'quality')} />
+            </div>
+          </div>
+
+          {/* Transparency: what the artisan actually receives */}
+          <div className="card" style={{ background: 'var(--leaf-soft)', borderColor: '#bcdbd1' }}>
+            <div className="row-between">
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#145244' }} lang={lang}>
+                  {t('कारीगर को मिलेगा', 'The artisan receives')}
+                </div>
+                <div className="mono" style={{ fontSize: 21, fontWeight: 800, color: '#145244', marginTop: 3 }}>
+                  {rupees(unit * qty * 0.95)}
+                </div>
+              </div>
+              <div className="center">
+                <div className="mono" style={{ fontSize: 19, fontWeight: 800, color: '#145244' }}>95%</div>
+                <div style={{ fontSize: 9, color: '#3d7a68', textTransform: 'uppercase' }}>
+                  {t('हर रुपये का', 'of every rupee')}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {product.story && (
+            <div className="card tinted">
+              <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 6 }} lang={lang}>
+                📖 {t('इसकी कहानी', 'The story')}
+              </div>
+              <div style={{ fontSize: 13, lineHeight: 1.7, color: 'var(--ink-soft)' }}>
+                {product.story}
+              </div>
+            </div>
+          )}
+
+          <div className="card">
+            <div style={{ fontWeight: 700, fontSize: 13.5, marginBottom: 10 }} lang={lang}>
+              {t('पूरा विवरण', 'Details')}
+            </div>
+            <p style={{ fontSize: 13, lineHeight: 1.7, margin: '0 0 12px', color: 'var(--ink-soft)' }}>
+              {product.detailed_description}
+            </p>
+            {[
+              [t('सामग्री', 'Material'), product.material],
+              [t('तकनीक', 'Technique'), product.technique],
+              [t('रंग', 'Colour'), product.colour],
+              [t('नाप', 'Size'), product.size],
+              [t('वज़न', 'Weight'), product.weight],
+              [t('कहाँ से', 'Origin'), product.region],
+              [t('तैयार होने में', 'Lead time'), `${product.lead_time_days} ${t('दिन', 'days')}`],
+              [t('कम से कम मात्रा', 'MOQ'), product.moq],
+              [t('रख-रखाव', 'Care'), product.care],
+            ].filter(([, v]) => v).map(([label, value]) => (
+              <div
+                key={label}
+                className="row-between"
+                style={{ fontSize: 12.5, padding: '7px 0', borderTop: '1px solid var(--line)' }}
+              >
+                <span className="muted">{label}</span>
+                <span style={{ fontWeight: 600, textAlign: 'right', maxWidth: '62%' }}>{value}</span>
+              </div>
+            ))}
+          </div>
+
+          {product.sustainability_score > 0 && (
+            <div className="card">
+              <div className="row-between" style={{ marginBottom: 7 }}>
+                <span style={{ fontWeight: 700, fontSize: 13 }} lang={lang}>
+                  🌱 {t('पर्यावरण अंक', 'Sustainability')}
+                </span>
+                <span className="mono pill leaf">{product.sustainability_score}/100</span>
+              </div>
+              <Bar value={product.sustainability_score} tone="var(--leaf)" />
+            </div>
+          )}
+
+          {pm.comparables?.length > 0 && (
+            <div className="card">
+              <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 9 }} lang={lang}>
+                {t('यही चीज़ और जगह', 'The same piece elsewhere')}
+              </div>
+              {pm.comparables.slice(0, 3).map((c) => (
+                <div key={c.label} className="row-between" style={{ fontSize: 12, padding: '5px 0' }}>
+                  <span className="muted" lang={lang}>{lang === 'hi' ? c.label_hi || c.label : c.label}</span>
+                  <span className="mono" style={{ fontWeight: 700 }}>{rupees(c.price)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {isB2B && (
+            <div className="card">
+              <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 9 }} lang={lang}>
+                {t('कितने चाहिए?', 'How many?')}
+              </div>
+              <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
+                {[1, 10, 20, 50, 100].map((n) => (
+                  <button
+                    key={n}
+                    className={`chip ${qty === n ? 'active' : ''}`}
+                    onClick={() => setQty(n)}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <button
+            className="btn btn-primary btn-block"
+            onClick={buy}
+            disabled={busy || product.stock < 1}
+            style={{ padding: 16 }}
+          >
+            {product.stock < 1
+              ? t('अभी उपलब्ध नहीं', 'Out of stock')
+              : busy
+                ? <><span className="spinner" /> …</>
+                : isB2B
+                  ? `📨 ${t('पूछताछ भेजिए', 'Request a quote')}`
+                  : `🛍️ ${t('अभी ख़रीदिए', 'Buy now')} · ${rupees(unit * qty)}`}
+          </button>
+
+          {role === 'artisan' && (
+            <button className="btn btn-soft btn-block" onClick={() => navigate(`/artisan/buyers?product=${product.id}`)}>
+              🤝 {t('इसके लिए खरीदार देखिए', 'See buyers for this piece')}
+            </button>
+          )}
+
+          {similar.length > 0 && (
+            <>
+              <div className="section-title" style={{ marginTop: 6 }} lang={lang}>
+                {t('इससे मिलता-जुलता', 'You may also like')}
+              </div>
+              <div className="scroll-x">
+                {similar.map((p) => <ProductCard key={p.id} product={p} compact />)}
+              </div>
+            </>
+          )}
+        </div>
+        <VoiceOrb
+          text={t(
+            `${product.title}। ${product.short_description} कीमत ${Math.round(product.price)} रुपये, जिसमें से ${Math.round(product.price * 0.95)} रुपये सीधे कारीगर को जाते हैं।`,
+            `${product.title}. ${product.short_description} It costs ${Math.round(product.price)} rupees, of which ${Math.round(product.price * 0.95)} goes straight to the artisan.`,
+          )}
+        />
+      </Screen>
+    </>
+  )
+}

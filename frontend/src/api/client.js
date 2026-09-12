@@ -1,0 +1,93 @@
+/** Thin API client. Every call returns parsed JSON or throws an Error whose
+ *  message is safe to show a user. */
+
+const BASE = import.meta.env.VITE_API_BASE || ''
+
+async function handle(res) {
+  if (res.status === 204) return null
+  let body = null
+  try { body = await res.json() } catch { /* empty or non-JSON body */ }
+  if (!res.ok) {
+    const detail = body?.detail
+    throw new Error(
+      typeof detail === 'string' ? detail
+        : Array.isArray(detail) ? detail.map((d) => d.msg).join(', ')
+        : `Request failed (${res.status})`,
+    )
+  }
+  return body
+}
+
+function qs(params = {}) {
+  const entries = Object.entries(params).filter(
+    ([, v]) => v !== undefined && v !== null && v !== '' && v !== false,
+  )
+  return entries.length ? `?${new URLSearchParams(entries)}` : ''
+}
+
+export const api = {
+  get: (path, params) => fetch(`${BASE}${path}${qs(params)}`).then(handle),
+
+  post: (path, body) => fetch(`${BASE}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  }).then(handle),
+
+  patch: (path, body) => fetch(`${BASE}${path}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  }).then(handle),
+
+  form: (path, fields) => {
+    const data = new FormData()
+    Object.entries(fields).forEach(([k, v]) => {
+      if (v !== undefined && v !== null) data.append(k, v)
+    })
+    return fetch(`${BASE}${path}`, { method: 'POST', body: data }).then(handle)
+  },
+}
+
+// --- domain helpers ------------------------------------------------------
+export const health = () => api.get('/api/health')
+export const aiStatus = () => api.get('/api/ai/status')
+
+export const analyzeImage = (file) => api.form('/api/ai/analyze-image', { file })
+export const coach = (transcript, language) => api.form('/api/ai/coach', { transcript, language })
+export const generateListing = (payload) => api.form('/api/ai/generate-listing', payload)
+export const transcribeAudio = (file, language) =>
+  api.form('/api/ai/transcribe', { file, language })
+
+export const listProducts = (params) => api.get('/api/products', params)
+export const featuredProducts = (limit = 8) => api.get('/api/products/featured', { limit })
+export const getProduct = (id) => api.get(`/api/products/${id}`)
+export const similarProducts = (id, limit = 6) => api.get(`/api/products/${id}/similar`, { limit })
+export const createProduct = (payload) => api.post('/api/products', payload)
+export const updateProduct = (id, payload) => api.patch(`/api/products/${id}`, payload)
+
+export const search = (params) => api.get('/api/search', params)
+export const suggest = (q) => api.get('/api/search/suggest', { q })
+export const facets = () => api.get('/api/search/facets')
+export const trending = () => api.get('/api/search/trending')
+
+export const recommendPrice = (payload) => api.post('/api/pricing/recommend', payload)
+export const priceForProduct = (id, params) => api.get(`/api/pricing/product/${id}`, params)
+export const marketContext = () => api.get('/api/pricing/market-context')
+export const craftList = () => api.get('/api/pricing/crafts')
+
+export const listBuyers = (params) => api.get('/api/buyers', params)
+export const matchBuyers = (productId, params) => api.get(`/api/buyers/match/${productId}`, params)
+export const buyerRecommendations = (buyerId) =>
+  api.get(`/api/buyers/${buyerId}/recommended-products`)
+export const sendEnquiry = (payload) => api.post('/api/buyers/enquiries', payload)
+export const artisanEnquiries = (id) => api.get(`/api/buyers/enquiries/for-artisan/${id}`)
+
+export const listUsers = (role) => api.get('/api/users', { role })
+export const dashboard = (id) => api.get(`/api/artisans/${id}/dashboard`)
+export const placeOrder = (payload) => api.post('/api/orders', payload)
+export const platformStats = () => api.get('/api/stats/platform')
+
+export const voiceWelcome = (role, lang) => api.get('/api/voice/welcome', { role, lang })
+export const voiceScripts = (lang) => api.get('/api/voice/scripts', { lang })
+export const voiceRoles = (lang) => api.get('/api/voice/roles', { lang })

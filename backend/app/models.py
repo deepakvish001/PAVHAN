@@ -61,6 +61,12 @@ class Product(Base):
     short_description: Mapped[str] = mapped_column(String(400), default="")
     detailed_description: Mapped[str] = mapped_column(Text, default="")
     story: Mapped[str] = mapped_column(Text, default="")
+    # Hindi copy, generated alongside the English rather than translated later.
+    title_hi: Mapped[str] = mapped_column(String(200), default="")
+    short_description_hi: Mapped[str] = mapped_column(String(400), default="")
+    detailed_description_hi: Mapped[str] = mapped_column(Text, default="")
+    story_hi: Mapped[str] = mapped_column(Text, default="")
+    care_hi: Mapped[str] = mapped_column(String(200), default="")
 
     craft_type: Mapped[str] = mapped_column(String(80), index=True, default="")
     category: Mapped[str] = mapped_column(String(80), index=True, default="")

@@ -18,14 +18,19 @@ export default function Welcome() {
   const [prompt, setPrompt] = useState('')
   const [stats, setStats] = useState(null)
   const [picked, setPicked] = useState(null)
+  const [greeting, setGreeting] = useState(null)   // {text, skip}
 
   useEffect(() => {
     voiceRoles(lang).then((d) => { setRoles(d.roles || []); setPrompt(d.prompt || '') }).catch(() => {})
+    greetingRef.current = greeting
     platformStats().then(setStats).catch(() => {})
   }, [lang])
 
+  useEffect(() => { greetingRef.current = greeting }, [greeting])
+
   // The opening line, spoken once the moment the app opens.
   const greeted = useRef(false)
+  const greetingRef = useRef(null)
   useEffect(() => {
     if (!voiceOn || !prompt || greeted.current) return undefined
     greeted.current = true
@@ -36,14 +41,26 @@ export default function Welcome() {
   const choose = async (roleKey) => {
     setPicked(roleKey)
     setRole(roleKey)
-    try {
-      const w = await voiceWelcome(roleKey, lang)
-      // Protected: the greeting keeps playing on the home screen it lands on.
-      sayProtected(w.text)
-    } catch { /* the app works without the greeting */ }
     setUser((u) => u || { name: lang === 'hi' ? 'मेहमान' : 'Guest', role: roleKey })
-    setTimeout(() => navigate(HOME_FOR[roleKey] || '/shop'), 900)
+
+    const go = () => navigate(HOME_FOR[roleKey] || '/shop')
+
+    let welcome = null
+    try {
+      welcome = await voiceWelcome(roleKey, lang)
+    } catch { /* the app works without the greeting */ }
+
+    if (!welcome?.text || !voiceOn) { go(); return }
+
+    // Navigate when the greeting FINISHES, not on a timer. Racing a timer
+    // against speech is what made the app cut itself off after "welcome to".
+    // The whole line is shown on screen meanwhile, with a way to skip.
+    const skip = sayProtected(welcome.text, { onDone: go })
+    setGreeting({ text: welcome.text, skip })
   }
+
+  // Leaving the screen must not leave a half-spoken greeting behind.
+  useEffect(() => () => { greetingRef.current?.skip?.() }, [])
 
   return (
     <>
@@ -181,9 +198,17 @@ export default function Welcome() {
             ))}
           </div>
 
+          <button
+            className="btn btn-soft btn-block"
+            style={{ marginTop: 16 }}
+            onClick={() => navigate('/login')}
+          >
+            📱 {lang === 'hi' ? 'मोबाइल नंबर से खाता बनाइए' : 'Sign in with your mobile number'}
+          </button>
+
           <p
             className="center muted"
-            style={{ fontSize: 11, marginTop: 20, lineHeight: 1.6 }}
+            style={{ fontSize: 11, marginTop: 14, lineHeight: 1.6 }}
             lang={lang}
           >
             {lang === 'hi'
@@ -192,6 +217,39 @@ export default function Welcome() {
           </p>
         </div>
       </div>
+      {greeting && (
+        <div
+          style={{
+            position: 'absolute', inset: 0, zIndex: 120,
+            background: 'rgba(11, 10, 13, 0.93)', color: '#fff',
+            display: 'flex', flexDirection: 'column', alignItems: 'center',
+            justifyContent: 'center', padding: '32px 28px', textAlign: 'center',
+          }}
+        >
+          <div style={{ fontSize: 44, marginBottom: 18, animation: 'floaty 2.6s ease-in-out infinite' }}>
+            🗣️
+          </div>
+          <p
+            lang={lang}
+            style={{
+              fontSize: 16, lineHeight: 1.85, maxWidth: 360, margin: '0 0 26px',
+              fontFamily: lang === 'hi' ? 'var(--font-hi)' : 'var(--font-ui)',
+            }}
+          >
+            {greeting.text}
+          </p>
+          <button
+            className="btn btn-gold"
+            onClick={() => { greeting.skip?.() }}
+            style={{ minWidth: 170 }}
+          >
+            {lang === 'hi' ? 'आगे बढ़िए →' : 'Continue →'}
+          </button>
+          <div style={{ fontSize: 11, color: '#9aa0bd', marginTop: 14 }} lang={lang}>
+            {lang === 'hi' ? 'सुनकर अपने आप आगे बढ़ जाएगा' : 'It continues on its own when the line ends'}
+          </div>
+        </div>
+      )}
       <Toasts />
     </>
   )

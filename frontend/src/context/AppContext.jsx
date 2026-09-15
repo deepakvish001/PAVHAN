@@ -15,6 +15,8 @@ function loadSession() {
 export function AppProvider({ children }) {
   const saved = loadSession()
   const [role, setRole] = useState(saved?.role || null)
+  const [theme, setTheme] = useState(saved?.theme || 'light')
+  const [token, setToken] = useState(saved?.token || null)
   const [lang, setLang] = useState(saved?.lang || 'hi')
   const [voiceOn, setVoiceOn] = useState(saved?.voiceOn ?? true)
   const [user, setUser] = useState(saved?.user || null)
@@ -27,9 +29,9 @@ export function AppProvider({ children }) {
 
   useEffect(() => {
     try {
-      localStorage.setItem(STORE_KEY, JSON.stringify({ role, lang, voiceOn, user }))
+      localStorage.setItem(STORE_KEY, JSON.stringify({ role, lang, voiceOn, user, theme, token }))
     } catch { /* private mode; the app still works, it just forgets */ }
-  }, [role, lang, voiceOn, user])
+  }, [role, lang, voiceOn, user, theme, token])
 
   // Pull every script up front so the guide can speak with no round trip.
   useEffect(() => {
@@ -66,21 +68,52 @@ export function AppProvider({ children }) {
   /** Speak something that must survive the next navigation and must not be
    *  talked over by the screen it lands on. */
   const protectedUntil = useRef(0)
-  const sayProtected = useCallback((text) => {
-    if (!voiceOn || !text) return
+  const sayProtected = useCallback((text, { onDone } = {}) => {
+    if (!voiceOn || !text) {
+      onDone?.()                       // muted: do not strand the caller
+      return () => {}
+    }
     // Hold the floor for roughly as long as the line takes to read, rather
     // than trusting `speaking` — some engines never fire onstart at all.
     const words = text.trim().split(/\s+/).length
-    protectedUntil.current = Date.now() + Math.min(22000, Math.max(4000, words * 420))
+    const estimate = Math.min(22000, Math.max(4000, words * 420))
+    protectedUntil.current = Date.now() + estimate
+
+    let finished = false
+    const finish = () => {
+      if (finished) return
+      finished = true
+      protectedUntil.current = 0
+      onDone?.()
+    }
     // ...and release it the moment the utterance genuinely ends, so whatever
-    // is queued behind it does not wait out the estimate.
-    assistant.speak(text, { onEnd: () => { protectedUntil.current = 0 } })
+    // is queued behind it does not wait out the estimate. The timer is the
+    // backstop for engines that never fire onend at all.
+    const backstop = setTimeout(finish, estimate + 800)
+    assistant.speak(text, { onEnd: () => { clearTimeout(backstop); finish() } })
+    return () => { clearTimeout(backstop); finish() }   // caller can skip ahead
   }, [assistant, voiceOn])
 
   const cancelUnlessProtected = useCallback(() => {
     if (Date.now() < protectedUntil.current) return
     assistant.cancel()
   }, [assistant])
+
+  // The theme lives on <html> so CSS variables cascade over everything,
+  // including portals and the scrollbar.
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme)
+    const meta = document.querySelector('meta[name="theme-color"]')
+    if (meta) meta.setAttribute('content', theme === 'dark' ? '#0b0a0d' : '#161B33')
+  }, [theme])
+
+  // Pinned at runtime so a tab that previously held another app cannot keep
+  // showing its title.
+  useEffect(() => { document.title = 'PAVHAN — AI-Powered Growth for Artisan Craft' }, [])
+
+  const toggleTheme = useCallback(() => {
+    setTheme((current) => (current === 'dark' ? 'light' : 'dark'))
+  }, [])
 
   const toast = useCallback((message, tone = 'ok', ms = 3600) => {
     const id = (toastId.current += 1)
@@ -138,6 +171,8 @@ export function AppProvider({ children }) {
   const value = useMemo(() => ({
     role, setRole,
     lang, setLang,
+    theme, setTheme, toggleTheme,
+    token, setToken,
     voiceOn, setVoiceOn,
     user, setUser,
     scripts,
@@ -146,8 +181,8 @@ export function AppProvider({ children }) {
     say, sayRaw, sayProtected, cancelUnlessProtected,
     toast, toasts,
     t: (hi, en) => (lang === 'hi' ? hi : en),
-  }), [role, lang, voiceOn, user, scripts, labels, L, assistant, say, sayRaw,
-       sayProtected, cancelUnlessProtected, toast, toasts])
+  }), [role, lang, voiceOn, user, theme, token, toggleTheme, scripts, labels, L,
+       assistant, say, sayRaw, sayProtected, cancelUnlessProtected, toast, toasts])
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>
 }

@@ -21,6 +21,7 @@ import os
 import random
 import sys
 import urllib.error
+import urllib.parse
 import urllib.request
 
 BASE = os.environ.get("PAVHAN_URL", "http://127.0.0.1:8000").rstrip("/")
@@ -37,6 +38,14 @@ def check(name: str, condition: bool, detail: str = "") -> bool:
 
 def get(path: str):
     with urllib.request.urlopen(f"{BASE}{path}", timeout=30) as r:
+        return json.load(r)
+
+
+def post_json_query(path: str, params: dict):
+    """POST with query-string arguments (FastAPI Query parameters)."""
+    query = urllib.parse.urlencode(params)
+    req = urllib.request.Request(f"{BASE}{path}?{query}", b"", method="POST")
+    with urllib.request.urlopen(req, timeout=30) as r:
         return json.load(r)
 
 
@@ -241,6 +250,85 @@ def main() -> int:
         "language": "hi",
     })
     check("complete notes score high", full["completeness"] >= 80, f'{full["completeness"]}%')
+
+    print("\n[AI Product Studio]")
+    studio_status = get("/api/studio/status")
+    check("studio engine is available", bool(studio_status.get("engine")),
+          studio_status.get("engine"))
+    dim = make_image("silk")
+    shot = post_multipart("/api/studio/enhance", {"background": "white"},
+                          {"file": ("dim.jpg", dim, "image/jpeg")})
+    report = shot["report"]
+    check("before and after are both produced",
+          bool(shot["before_url"]) and bool(shot["after_url"]))
+    check("lighting was corrected",
+          report["brightness_after"] > report["brightness_before"],
+          f'{report["brightness_before"]} -> {report["brightness_after"]}')
+    check("output is a square e-commerce master",
+          report["width"] == report["height"] == 1600,
+          f'{report["width"]}x{report["height"]}')
+    check("every studio step explains itself in both languages",
+          all(s.get("detail") and s.get("detail_hi") for s in report["steps"]))
+    check("the studio re-reads the cleaned photo", shot.get("vision") is not None)
+
+    print("\n[Hindi copy]")
+    hindi = post_multipart("/api/ai/generate-listing", {
+        "transcript": "Yeh Banarasi silk saree hai, laal rang, 5.5 metre, 450 gram, "
+                      "barah din lage",
+        "language": "hi",
+    })
+    devanagari = lambda t: any("\u0900" <= c <= "\u097f" for c in t or "")
+    check("Hindi title generated", devanagari(hindi.get("title_hi")), hindi.get("title_hi"))
+    check("Hindi short description generated",
+          devanagari(hindi.get("short_description_hi")))
+    check("Hindi detailed description generated",
+          devanagari(hindi.get("detailed_description_hi"))
+          and len(hindi["detailed_description_hi"]) > 80)
+    check("English copy is still English",
+          bool(hindi["detailed_description"]) and not devanagari(hindi["detailed_description"]))
+    check("Hindi carries the same facts",
+          "5.5" in hindi["detailed_description_hi"] and "450" in hindi["detailed_description_hi"])
+
+    print("\n[assistant]")
+    intents = {
+        "meri kamai kitni hai": "my_earnings",
+        "mere kitne saman hain": "my_products",
+        "achhi photo kaise lu": "photo_help",
+        "GI kya hota hai": "gi_help",
+        "commission kitna lete ho": "commission_help",
+        "who will buy my craft": "find_buyers",
+    }
+    wrong = []
+    for question, expected in intents.items():
+        reply = post_json_query("/api/assistant/ask", {"message": question, "lang": "hi"})
+        if reply["intent"] != expected:
+            wrong.append(f'{question} -> {reply["intent"]}')
+    check("assistant routes questions to the right intent", not wrong, "; ".join(wrong))
+    money = post_json_query("/api/assistant/ask",
+                            {"message": "meri kamai kitni hai", "lang": "hi"})
+    check("assistant answers from live data", "\u20b9" in money["text"])
+    check("assistant offers a next step", bool(money.get("action")))
+
+    print("\n[sign-in]")
+    otp = post_json("/api/auth/request-otp", {"phone": "9990001111"})
+    check("OTP requested", otp["sent"])
+    check("demo code is exposed only because no SMS gateway is set",
+          bool(otp["demo_code"]) and otp["delivered_by_sms"] is False)
+    session = post_json("/api/auth/verify-otp", {
+        "phone": "9990001111", "code": otp["demo_code"], "name": "Test Artisan",
+        "role": "artisan", "language": "hi",
+    })
+    check("signed in", bool(session["token"]))
+    check("new user is sent to onboarding", session["needs_onboarding"])
+    profile = post_json("/api/auth/complete-profile", {
+        "token": session["token"], "craft_focus": "Bamboo & Cane Craft", "region": "Assam",
+    })
+    check("profile saved", profile["craft_focus"] == "Bamboo & Cane Craft")
+
+    print("\n[Hindi labels for data]")
+    labels = get("/api/voice/labels?lang=hi")["labels"]
+    check("craft, category, material and region labels exist",
+          all(labels.get(k) for k in ("crafts", "categories", "materials", "regions")))
 
     print("\n[artisan dashboard]")
     dash = get(f"/api/artisans/{artisan['id']}/dashboard")

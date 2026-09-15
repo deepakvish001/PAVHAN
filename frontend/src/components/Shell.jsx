@@ -3,7 +3,7 @@ import { useApp } from '../context/AppContext'
 
 export function TopBar({ title, subtitle, back, right, onBack }) {
   const navigate = useNavigate()
-  const { lang, setLang, voiceOn, setVoiceOn, assistant } = useApp()
+  const { lang, setLang, voiceOn, setVoiceOn, assistant, theme, toggleTheme } = useApp()
 
   return (
     <header className="topbar">
@@ -23,6 +23,14 @@ export function TopBar({ title, subtitle, back, right, onBack }) {
         {subtitle && <div className="sub">{subtitle}</div>}
       </div>
       {right}
+      <button
+        className="topbar-btn"
+        onClick={toggleTheme}
+        aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+        title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
+      >
+        {theme === 'dark' ? '☀️' : '🌙'}
+      </button>
       <button
         className="topbar-btn"
         onClick={() => setLang(lang === 'hi' ? 'en' : 'hi')}

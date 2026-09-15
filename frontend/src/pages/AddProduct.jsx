@@ -5,7 +5,7 @@ import { TopBar, Toasts } from '../components/Shell'
 import { Bar, ScoreRing, Stepper, VoiceOrb, rupees } from '../components/ui'
 import useSpeechRecognition, { micDiagnostics } from '../hooks/useSpeechRecognition'
 import {
-  analyzeImage, coach, createProduct, generateListing, listUsers,
+  coach, createProduct, enhancePhoto, generateListing, listUsers,
   matchBuyers, sendEnquiry, transcribeAudio,
 } from '../api/client'
 
@@ -71,11 +71,21 @@ function useStepVoice(screen, say) {
 // ===========================================================================
 // Step 0 — photograph
 // ===========================================================================
-function PhotoStep({ imageUrl, vision, analysing, onPick, onNext }) {
+const BACKDROPS = [
+  { key: 'white', label_hi: 'सफ़ेद', label_en: 'White', swatch: '#ffffff' },
+  { key: 'studio', label_hi: 'स्टूडियो', label_en: 'Studio', swatch: 'linear-gradient(160deg,#fcfaf6,#e2dcd0)' },
+  { key: 'transparent', label_hi: 'पारदर्शी', label_en: 'Transparent', swatch: 'repeating-conic-gradient(#ccc 0 25%, #fff 0 50%) 50%/12px 12px' },
+  { key: 'original', label_hi: 'जैसी है', label_en: 'Original', swatch: 'linear-gradient(160deg,#b08a5a,#6d5637)' },
+]
+
+function PhotoStep({ studio, working, backdrop, setBackdrop, onPick, onNext }) {
   const { t, lang, say } = useApp()
   const fileRef = useRef(null)
   const cameraRef = useRef(null)
+  const [compare, setCompare] = useState(false)
   useStepVoice('capture_photo', say)
+
+  const report = studio?.report
 
   return (
     <div className="page stack">
@@ -84,46 +94,62 @@ function PhotoStep({ imageUrl, vision, analysing, onPick, onNext }) {
           {t('पहले सामान की फोटो लीजिए', 'First, photograph your piece')}
         </h2>
         <p className="section-sub" style={{ marginTop: 6 }} lang={lang}>
-          {t('दिन की रोशनी में, सादे कपड़े पर, पूरा सामान फ्रेम में।',
-             'Daylight, plain cloth behind it, the whole piece inside the frame.')}
+          {t('दिन की रोशनी में, सादे कपड़े पर। बाकी सुधार मैं कर दूँगा।',
+             'Daylight, plain cloth behind it. I will fix the rest.')}
         </p>
       </div>
 
       <div
         className="card flush"
         style={{
-          minHeight: 210, display: 'grid', placeItems: 'center',
-          background: imageUrl ? '#000' : 'var(--paper-2)', position: 'relative',
-          borderStyle: imageUrl ? 'solid' : 'dashed', borderWidth: imageUrl ? 1 : 2,
+          minHeight: 210, display: 'grid', placeItems: 'center', position: 'relative',
+          background: studio ? 'var(--paper-2)' : 'var(--paper-2)',
+          borderStyle: studio ? 'solid' : 'dashed', borderWidth: studio ? 1 : 2,
         }}
       >
-        {imageUrl ? (
+        {studio ? (
           <>
             <img
-              src={imageUrl}
+              src={compare ? studio.before_url : studio.after_url}
               alt=""
-              style={{ width: '100%', maxHeight: 300, objectFit: 'contain', display: 'block' }}
+              style={{ width: '100%', maxHeight: 320, objectFit: 'contain', display: 'block',
+                       background: compare ? '#000' : 'transparent' }}
             />
-            {analysing && (
-              <div
-                style={{
-                  position: 'absolute', inset: 0, background: 'rgba(22,27,51,0.62)',
-                  display: 'grid', placeItems: 'center', color: '#fff',
-                }}
-              >
-                <div className="center">
-                  <div className="spinner" style={{ margin: '0 auto 10px' }} />
-                  <div style={{ fontSize: 13 }} lang={lang}>
-                    {t('फोटो पढ़ी जा रही है…', 'Reading your photo…')}
-                  </div>
-                </div>
-              </div>
-            )}
+            <div style={{ position: 'absolute', top: 10, left: 10 }}>
+              <span className="pill" style={{ background: compare ? 'var(--ink)' : 'var(--leaf)',
+                                              color: '#fff', border: 0 }}>
+                {compare ? t('पहले', 'Before') : t('बाद में', 'After')}
+              </span>
+            </div>
+            <button
+              onMouseDown={() => setCompare(true)} onMouseUp={() => setCompare(false)}
+              onMouseLeave={() => setCompare(false)}
+              onTouchStart={() => setCompare(true)} onTouchEnd={() => setCompare(false)}
+              className="btn btn-sm"
+              style={{ position: 'absolute', bottom: 10, right: 10, background: 'rgba(0,0,0,0.62)',
+                       color: '#fff', backdropFilter: 'blur(4px)' }}
+            >
+              👁 {t('दबाकर पहले वाली देखिए', 'Hold to see before')}
+            </button>
           </>
         ) : (
           <div className="center muted" style={{ padding: 30 }}>
             <div style={{ fontSize: 40, marginBottom: 8 }}>📷</div>
             <div style={{ fontSize: 13 }} lang={lang}>{t('अभी कोई फोटो नहीं', 'No photo yet')}</div>
+          </div>
+        )}
+        {working && (
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(22,27,51,0.72)',
+                        display: 'grid', placeItems: 'center', color: '#fff' }}>
+            <div className="center">
+              <div className="spinner" style={{ margin: '0 auto 10px' }} />
+              <div style={{ fontSize: 13 }} lang={lang}>
+                {t('स्टूडियो में सुधारा जा रहा है…', 'Cleaning it up in the studio…')}
+              </div>
+              <div style={{ fontSize: 11, color: '#b9c0da', marginTop: 5 }} lang={lang}>
+                {t('बैकग्राउंड, रोशनी, नाप', 'Background, lighting, framing')}
+              </div>
+            </div>
           </div>
         )}
       </div>
@@ -142,17 +168,83 @@ function PhotoStep({ imageUrl, vision, analysing, onPick, onNext }) {
         </button>
       </div>
 
-      {vision && <PhotoReport vision={vision} />}
+      {studio && (
+        <>
+          <div className="card">
+            <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 9 }} lang={lang}>
+              {t('बैकग्राउंड चुनिए', 'Choose a backdrop')}
+            </div>
+            <div className="row" style={{ gap: 9 }}>
+              {BACKDROPS.map((b) => (
+                <button key={b.key} onClick={() => setBackdrop(b.key)}
+                        style={{ flex: 1, border: backdrop === b.key ? '2px solid var(--madder)'
+                                                                     : '1px solid var(--line)',
+                                 borderRadius: 12, padding: 6, background: 'var(--card)' }}>
+                  <div style={{ height: 34, borderRadius: 8, background: b.swatch,
+                                border: '1px solid var(--line)' }} />
+                  <div style={{ fontSize: 10, fontWeight: 700, marginTop: 5 }} lang={lang}>
+                    {lang === 'hi' ? b.label_hi : b.label_en}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
 
-      <button className="btn btn-primary btn-block" disabled={analysing} onClick={onNext}
+          <StudioReport report={report} />
+        </>
+      )}
+
+      <button className="btn btn-primary btn-block" disabled={working} onClick={onNext}
               style={{ marginTop: 4 }}>
-        {imageUrl ? t('आगे — अब बोलिए', 'Next — now speak')
-                  : t('फोटो के बिना आगे बढ़िए', 'Continue without a photo')}
+        {studio ? t('आगे — अब बोलिए', 'Next — now speak')
+                : t('फोटो के बिना आगे बढ़िए', 'Continue without a photo')}
       </button>
       <p className="center muted" style={{ fontSize: 11, lineHeight: 1.55 }} lang={lang}>
-        {t('फोटो से रंग, बनावट और बारीकी अपने आप पढ़ी जाती है — इसी से दाम तय होता है।',
-           "The photo's colour, texture and intricacy are measured automatically — they feed your price.")}
+        {t('बैकग्राउंड, रोशनी और नाप अपने आप ठीक होते हैं — बिना इंटरनेट के भी।',
+           'Background, lighting and framing are fixed automatically — even offline.')}
       </p>
+    </div>
+  )
+}
+
+function StudioReport({ report }) {
+  const { t, lang } = useApp()
+  if (!report) return null
+  const lift = report.brightness_after - report.brightness_before
+  return (
+    <div className="card fade-up">
+      <div className="row-between" style={{ marginBottom: 9 }}>
+        <div style={{ fontWeight: 700, fontSize: 13.5 }} lang={lang}>
+          ✨ {t('स्टूडियो ने क्या किया', 'What the studio did')}
+        </div>
+        {report.background_removed && (
+          <span className="pill leaf">{report.segmentation_confidence}%</span>
+        )}
+      </div>
+      {report.steps.map((s) => (
+        <div key={s.key} className="row" style={{ gap: 8, alignItems: 'flex-start',
+                                                  marginBottom: 7 }}>
+          <span style={{ flexShrink: 0 }}>{s.applied ? '✅' : '⚠️'}</span>
+          <div>
+            <div style={{ fontSize: 12.5, fontWeight: 600 }} lang={lang}>
+              {lang === 'hi' ? s.label_hi : s.label}
+            </div>
+            <div className="muted" style={{ fontSize: 11, lineHeight: 1.5 }} lang={lang}>
+              {lang === 'hi' ? s.detail_hi || s.detail : s.detail}
+            </div>
+          </div>
+        </div>
+      ))}
+      <div className="row" style={{ gap: 8, flexWrap: 'wrap', marginTop: 10,
+                                    paddingTop: 10, borderTop: '1px solid var(--line)' }}>
+        {lift > 4 && (
+          <span className="pill gold">
+            ☀️ {t(`रोशनी +${Math.round(lift)}`, `Light +${Math.round(lift)}`)}
+          </span>
+        )}
+        <span className="pill ink">{report.width}×{report.height}</span>
+        <span className="pill">{report.engine.includes('OpenCV') ? 'OpenCV GrabCut' : 'on-device'}</span>
+      </div>
     </div>
   )
 }
@@ -257,6 +349,40 @@ function VoiceStep({ imageId, text, setText, onGenerated }) {
     }
   }
 
+  /** Prove the microphone hears them, without starting a whole recording. */
+  const testMic = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const Ctx = window.AudioContext || window.webkitAudioContext
+      const ctx = new Ctx()
+      const analyser = ctx.createAnalyser()
+      ctx.createMediaStreamSource(stream).connect(analyser)
+      const buf = new Uint8Array(analyser.frequencyBinCount)
+      let peak = 0
+      const started = Date.now()
+      sayRaw(t('कुछ बोलिए… मैं जाँच रहा हूँ।', 'Say something — I am checking.'))
+      const tick = () => {
+        analyser.getByteTimeDomainData(buf)
+        for (const v of buf) peak = Math.max(peak, Math.abs(v - 128) / 128)
+        if (Date.now() - started < 3200) { requestAnimationFrame(tick); return }
+        stream.getTracks().forEach((t2) => t2.stop())
+        ctx.close().catch(() => {})
+        micDiagnostics().then(setDiag).catch(() => {})
+        toast(
+          peak > 0.05
+            ? t('माइक ठीक है — आपकी आवाज़ आ रही है ✓', 'Your mic works — I can hear you ✓')
+            : t('कुछ सुनाई नहीं दिया। माइक के पास आकर दोबारा बोलिए।',
+                 'I heard nothing. Move closer and try again.'),
+          peak > 0.05 ? 'ok' : 'warn', 4200,
+        )
+      }
+      tick()
+    } catch {
+      toast(t('माइक की अनुमति नहीं मिली।', 'Microphone permission was refused.'), 'err')
+      micDiagnostics().then(setDiag).catch(() => {})
+    }
+  }
+
   const generate = async () => {
     const value = text.trim()
     if (!value && !imageId) {
@@ -284,7 +410,10 @@ function VoiceStep({ imageId, text, setText, onGenerated }) {
     setShowSamples(false)
   }
 
-  const live = `${text}${mic.interim ? ` ${mic.interim}` : ''}`.trim()
+  // NOT trimmed. This string is the textarea's controlled value, and trimming
+  // it deletes the space the moment the user presses the spacebar — which made
+  // typing come out as "thisisthetshirtwhich". Trim only when sending.
+  const live = mic.interim ? `${text} ${mic.interim}` : text
 
   return (
     <div className="page stack">
@@ -305,7 +434,7 @@ function VoiceStep({ imageId, text, setText, onGenerated }) {
         </div>
       )}
 
-      <MicHelp diag={diag} onRecord={recordAudio} recording={recording} />
+      <MicHelp diag={diag} onRecord={recordAudio} recording={recording} onTest={testMic} />
 
       <div className="field">
         <div className="row-between">
@@ -413,7 +542,7 @@ function MicButton({ mic, onToggle }) {
  * The panel that answers "why can't it hear me?" precisely.
  * Silence here is what made the old build feel broken.
  */
-function MicHelp({ diag, onRecord, recording }) {
+function MicHelp({ diag, onRecord, recording, onTest }) {
   const { t, lang } = useApp()
   const [open, setOpen] = useState(false)
   if (!diag) return null
@@ -500,13 +629,18 @@ function MicHelp({ diag, onRecord, recording }) {
         </div>
       )}
 
-      {fix && (
-        <button className="btn btn-soft btn-sm btn-block" style={{ marginTop: 10 }}
-                onClick={onRecord}>
-          {recording ? t('⏹ रिकॉर्डिंग रोकिए', '⏹ Stop recording')
-                     : t('🎙️ इसके बदले आवाज़ रिकॉर्ड कीजिए', '🎙️ Record audio instead')}
+      {/* Always offered, not only when something is broken. Chrome's speech
+          service can fail mid-demo on a venue network, and the artisan should
+          never be left with no way to speak. */}
+      <div className="row" style={{ gap: 8, marginTop: 10 }}>
+        <button className="btn btn-soft btn-sm" style={{ flex: 1 }} onClick={onRecord}>
+          {recording ? t('⏹ रोकिए', '⏹ Stop')
+                     : t('🎙️ आवाज़ रिकॉर्ड कीजिए', '🎙️ Record audio')}
         </button>
-      )}
+        <button className="btn btn-soft btn-sm" style={{ flex: 1 }} onClick={onTest}>
+          🔎 {t('माइक जाँचिए', 'Test my mic')}
+        </button>
+      </div>
     </div>
   )
 }
@@ -605,9 +739,37 @@ function ReviewStep({ listing, setListing, onNext }) {
                   onChange={set('short_description')} />
       </div>
       <div className="field">
-        <label>{t('पूरा विवरण', 'Detailed description')}</label>
+        <label>{t('पूरा विवरण (अंग्रेज़ी)', 'Detailed description (English)')}</label>
         <textarea className="textarea" rows={5} value={listing.detailed_description}
                   onChange={set('detailed_description')} />
+      </div>
+
+      {/* The problem statement asks for both languages, and a buyer on a
+          government marketplace may search in either. Both are editable. */}
+      <div className="card" style={{ background: 'var(--paper-2)' }}>
+        <div className="row-between" style={{ marginBottom: 9 }}>
+          <div style={{ fontWeight: 700, fontSize: 13 }} lang={lang}>
+            🇮🇳 {t('हिंदी विवरण', 'Hindi listing')}
+          </div>
+          <span className="pill leaf">{t('अपने आप बना', 'auto-written')}</span>
+        </div>
+        <div className="field" style={{ marginBottom: 10 }}>
+          <label>{t('हिंदी नाम', 'Hindi title')}</label>
+          <input className="input" lang="hi" value={listing.title_hi || ''}
+                 onChange={set('title_hi')} />
+        </div>
+        <div className="field" style={{ marginBottom: 10 }}>
+          <label>{t('हिंदी में छोटा विवरण', 'Hindi short description')}</label>
+          <textarea className="textarea" lang="hi" rows={2}
+                    value={listing.short_description_hi || ''}
+                    onChange={set('short_description_hi')} />
+        </div>
+        <div className="field">
+          <label>{t('हिंदी में पूरा विवरण', 'Hindi detailed description')}</label>
+          <textarea className="textarea" lang="hi" rows={5}
+                    value={listing.detailed_description_hi || ''}
+                    onChange={set('detailed_description_hi')} />
+        </div>
       </div>
 
       <div className="grid-2">
@@ -829,6 +991,11 @@ function PublishStep({ listing, saved, setSaved, matches, setMatches, onDone }) 
         short_description: listing.short_description,
         detailed_description: listing.detailed_description,
         story: listing.story,
+        title_hi: listing.title_hi || '',
+        short_description_hi: listing.short_description_hi || '',
+        detailed_description_hi: listing.detailed_description_hi || '',
+        story_hi: listing.story_hi || '',
+        care_hi: listing.care_hi || '',
         craft_type: listing.craft_type,
         category: listing.category,
         material: listing.material,
@@ -1094,7 +1261,9 @@ export default function AddProduct() {
   const [step, setStep] = useState(0)
 
   const [imageId, setImageId] = useState(null)
-  const [imageUrl, setImageUrl] = useState(null)
+  const [studio, setStudio] = useState(null)      // {before_url, after_url, report}
+  const [rawFile, setRawFile] = useState(null)
+  const [backdrop, setBackdrop] = useState('white')
   const [vision, setVision] = useState(null)
   const [analysing, setAnalysing] = useState(false)
   const [transcript, setTranscript] = useState('')
@@ -1111,27 +1280,39 @@ export default function AddProduct() {
 
   const goto = (n) => { setStep(n); document.querySelector('.app-body')?.scrollTo({ top: 0 }) }
 
-  const handlePhoto = async (file) => {
+  /** Run the photograph through the studio, then read the CLEANED image.
+   *  Measuring colour through a tungsten cast describes the room, not the
+   *  product, so the catalogue engine gets the corrected picture. */
+  const runStudio = async (file, background = backdrop) => {
     if (!file) return
     setAnalysing(true)
-    setImageUrl(URL.createObjectURL(file))
+    setRawFile(file)
     try {
-      const res = await analyzeImage(file)
+      const res = await enhancePhoto(file, background)
+      setStudio(res)
       setImageId(res.image_id)
       setVision(res.vision)
-      const tips = lang === 'hi' ? res.vision.photo_tips_hi : res.vision.photo_tips
-      const tip = tips?.[0] || res.vision.photo_tips?.[0]
-      if (tip) sayRaw(t(`फोटो देख ली। ${tip}`, `I have looked at your photo. ${tip}`))
+      const spoken = res.report.background_removed
+        ? t('फोटो साफ़ कर दी — बैकग्राउंड हटाकर रोशनी ठीक कर दी है।',
+             'Photo cleaned up — background removed and the lighting corrected.')
+        : (lang === 'hi' ? res.report.steps.find((x) => x.key === 'background')?.detail_hi
+                         : res.report.steps.find((x) => x.key === 'background')?.detail)
+      if (spoken) sayRaw(spoken)
     } catch (err) {
       toast(err.message, 'err')
-      setImageUrl(null)
+      setStudio(null)
     } finally {
       setAnalysing(false)
     }
   }
 
+  const changeBackdrop = async (next) => {
+    setBackdrop(next)
+    if (rawFile) await runStudio(rawFile, next)
+  }
+
   const restart = () => {
-    setImageId(null); setImageUrl(null); setVision(null)
+    setImageId(null); setStudio(null); setRawFile(null); setVision(null)
     setTranscript(''); setListing(null); setSaved(null); setMatches(null)
     goto(0)
   }
@@ -1148,8 +1329,9 @@ export default function AddProduct() {
         <Stepper steps={steps} current={step} />
 
         {step === 0 && (
-          <PhotoStep imageUrl={imageUrl} vision={vision} analysing={analysing}
-                     onPick={handlePhoto} onNext={() => goto(1)} />
+          <PhotoStep studio={studio} working={analysing} backdrop={backdrop}
+                     setBackdrop={changeBackdrop} onPick={runStudio}
+                     onNext={() => goto(1)} />
         )}
         {step === 1 && (
           <VoiceStep imageId={imageId} text={transcript} setText={setTranscript}

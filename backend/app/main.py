@@ -14,7 +14,9 @@ from fastapi.staticfiles import StaticFiles
 from . import __version__
 from .config import MEDIA_DIR, settings
 from .database import Base, SessionLocal, engine
-from .routers import ai, buyers, pricing, products, search, users, voice
+from .routers import (
+    ai, assistant, auth, buyers, pricing, products, search, studio, users, voice,
+)
 from .seed import seed
 from .services import llm, search_engine
 
@@ -63,8 +65,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-for router in (products.router, search.router, ai.router, pricing.router,
-               buyers.router, voice.router, users.router):
+for router in (products.router, search.router, ai.router, studio.router,
+               pricing.router, buyers.router, voice.router, users.router,
+               assistant.router, auth.router):
     app.include_router(router)
 
 MEDIA_DIR.mkdir(parents=True, exist_ok=True)

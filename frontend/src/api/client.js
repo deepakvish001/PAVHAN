@@ -18,6 +18,10 @@ async function handle(res) {
   return body
 }
 
+export function qsPublic(params) {
+  return qs(params)
+}
+
 function qs(params = {}) {
   const entries = Object.entries(params).filter(
     ([, v]) => v !== undefined && v !== null && v !== '' && v !== false,
@@ -92,3 +96,19 @@ export const voiceWelcome = (role, lang) => api.get('/api/voice/welcome', { role
 export const voiceScripts = (lang) => api.get('/api/voice/scripts', { lang })
 export const voiceRoles = (lang) => api.get('/api/voice/roles', { lang })
 export const voiceLabels = (lang) => api.get('/api/voice/labels', { lang })
+
+// --- AI Product Studio ---------------------------------------------------
+export const studioStatus = () => api.get('/api/studio/status')
+export const enhancePhoto = (file, background = 'white') =>
+  api.form('/api/studio/enhance', { file, background })
+
+// --- assistant -----------------------------------------------------------
+export const askAssistant = (message, lang, artisanId) =>
+  api.post(`/api/assistant/ask${qsPublic({ message, lang, artisan_id: artisanId })}`)
+export const assistantSuggestions = (lang) => api.get('/api/assistant/suggestions', { lang })
+
+// --- auth ----------------------------------------------------------------
+export const requestOtp = (phone) => api.post('/api/auth/request-otp', { phone })
+export const verifyOtp = (payload) => api.post('/api/auth/verify-otp', payload)
+export const completeProfile = (payload) => api.post('/api/auth/complete-profile', payload)
+export const whoAmI = (token) => api.get('/api/auth/me', { token })

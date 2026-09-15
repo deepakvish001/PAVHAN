@@ -120,6 +120,25 @@ export default function ArtisanHome() {
             🎤 {t('बोलकर नया सामान डालिए', 'Add a product by voice')}
           </button>
 
+          <button
+            className="card row fade-up"
+            style={{ gap: 12, width: '100%', textAlign: 'left' }}
+            onClick={() => navigate('/assistant')}
+          >
+            <div style={{ width: 42, height: 42, borderRadius: 13, flexShrink: 0,
+                          background: 'var(--marigold-soft)', display: 'grid',
+                          placeItems: 'center', fontSize: 21 }}>🪡</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontWeight: 700, fontSize: 14 }} lang={lang}>
+                {t('पवन सहायक से पूछिए', 'Ask the PAVHAN assistant')}
+              </div>
+              <div className="muted" style={{ fontSize: 11.5, marginTop: 2 }} lang={lang}>
+                {t('दाम, कमाई, फोटो — कुछ भी पूछिए', 'Prices, earnings, photos — ask anything')}
+              </div>
+            </div>
+            <span style={{ color: 'var(--muted)' }}>›</span>
+          </button>
+
           {market && (
             <div className="card tinted fade-up">
               <div className="row-between">

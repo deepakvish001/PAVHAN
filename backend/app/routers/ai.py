@@ -109,16 +109,26 @@ async def generate_listing(
     media_type = "image/jpeg"
     image_url = None
     if image_id:
-        cached = _IMAGE_CACHE.get(image_id)
-        if cached:
-            from pathlib import Path
+        from pathlib import Path
 
-            p = Path(cached["path"])
-            if p.exists():
-                image_bytes = p.read_bytes()
-                media_type = cached["media_type"]
-                image_url = f"/media/{p.name}"
-                vision = analyse_image(image_bytes)
+        path: Path | None = None
+        cached = _IMAGE_CACHE.get(image_id)
+        if cached and Path(cached["path"]).exists():
+            path = Path(cached["path"])
+            media_type = cached["media_type"]
+        else:
+            # The AI Product Studio writes "<id>_after.<ext>". A listing should
+            # carry the cleaned-up photograph, not the raw snapshot, so look
+            # for the studio output before giving up on the id.
+            for candidate in sorted(MEDIA_DIR.glob(f"{image_id}_after.*")):
+                path = candidate
+                media_type = "image/png" if candidate.suffix == ".png" else "image/jpeg"
+                break
+
+        if path and path.exists():
+            image_bytes = path.read_bytes()
+            image_url = f"/media/{path.name}"
+            vision = analyse_image(image_bytes)
 
     listing = build_listing(transcript, vision, language=language)
     facts: nlp.TranscriptFacts = listing.pop("_facts")

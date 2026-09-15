@@ -39,6 +39,7 @@
   --shadow-up: 0 -6px 24px rgba(22, 27, 51, 0.09);
 
   --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+  color-scheme: light;
   --font-ui: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-hi: 'Noto Sans Devanagari', 'Inter', system-ui, sans-serif;
 
@@ -47,12 +48,47 @@
   --safe-b: env(safe-area-inset-bottom, 0px);
 }
 
+/* ---------------------------------------------------------------- dark
+   Craft colours have to survive the switch, so the accents are lifted rather
+   than swapped: madder and marigold stay recognisable against a warm near
+   black rather than becoming muddy. Surfaces get a brown-tinted dark instead
+   of a blue-grey one — a handloom app should not look like a code editor. */
+:root[data-theme='dark'] {
+  --ink: #0f1220;
+  --ink-2: #1b1f33;
+  --ink-soft: #b9c0da;
+  --paper: #16141a;
+  --paper-2: #211e26;
+  --card: #1d1a22;
+  --line: #342f3b;
+
+  --madder: #e0685a;
+  --madder-dark: #c04c40;
+  --marigold: #f0ab4a;
+  --marigold-soft: #3a2e1a;
+  --indigo: #7c96d8;
+  --leaf: #4fb397;
+  --leaf-soft: #1c332e;
+  --clay: #d08a58;
+
+  --ok: #4fb397;
+  --warn: #d08a58;
+  --danger: #e0685a;
+  --muted: #9a92a6;
+
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 14px rgba(0, 0, 0, 0.32);
+  --shadow-2: 0 8px 30px rgba(0, 0, 0, 0.5);
+  --shadow-up: 0 -6px 24px rgba(0, 0, 0, 0.42);
+  color-scheme: dark;
+}
+
 * { box-sizing: border-box; }
 
 html, body {
   margin: 0;
   padding: 0;
   background: #ece5d8;
+  transition: background 0.25s ease;
   color: var(--ink);
   font-family: var(--font-ui);
   -webkit-font-smoothing: antialiased;
@@ -85,6 +121,29 @@ h1, h2, h3, h4 {
     radial-gradient(900px 700px at 100% 0%, #e4dcf0 0%, transparent 55%),
     #ece5d8;
 }
+
+:root[data-theme='dark'] body { background: #0b0a0d; }
+:root[data-theme='dark'] .app-frame {
+  background:
+    radial-gradient(1100px 600px at 12% -8%, #241d18 0%, transparent 60%),
+    radial-gradient(900px 700px at 100% 0%, #191a2b 0%, transparent 55%),
+    #0b0a0d;
+}
+:root[data-theme='dark'] .app-shell { box-shadow: 0 0 60px rgba(0, 0, 0, 0.7); }
+:root[data-theme='dark'] .bottomnav { background: rgba(22, 20, 26, 0.96); }
+:root[data-theme='dark'] .input,
+:root[data-theme='dark'] .textarea,
+:root[data-theme='dark'] .select { background: var(--paper-2); }
+:root[data-theme='dark'] .chip { background: var(--paper-2); }
+:root[data-theme='dark'] .skeleton {
+  background: linear-gradient(90deg, #221f28 25%, #2c2833 50%, #221f28 75%);
+  background-size: 420px 100%;
+}
+/* Pills carry their own light-mode tints, which go muddy on dark. */
+:root[data-theme='dark'] .pill.gold { background: #3a2e1a; color: #f0c98a; border-color: #4d3d22; }
+:root[data-theme='dark'] .pill.leaf { background: #1c332e; color: #7fd4bb; border-color: #27473f; }
+:root[data-theme='dark'] .pill.madder { background: #3a211e; color: #f0a196; border-color: #4d2b27; }
+:root[data-theme='dark'] .pill.ink { background: #232236; color: #b9c0da; border-color: #32314a; }
 
 .app-shell {
   width: 100%;

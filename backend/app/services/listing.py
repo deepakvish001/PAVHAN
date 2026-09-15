@@ -15,6 +15,7 @@ rather than guessing confidently.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 
 from . import nlp
@@ -195,6 +196,129 @@ def _detailed_description(
     return " ".join(lines)
 
 
+# ---------------------------------------------------------------------------
+# Hindi copy.
+#
+# The problem statement asks for professional descriptions in English AND
+# Hindi. With no Claude key the engine previously wrote English only, so the
+# Hindi fields came back empty. These generators mirror the English ones
+# exactly — same facts, same structure, nothing invented — but compose Hindi
+# sentences rather than translating word by word, because a literal
+# translation of English marketing copy reads like a form, not like a person.
+# ---------------------------------------------------------------------------
+def _hi(value: str, table: dict[str, str]) -> str:
+    """Hindi name for a data token, falling back to the token itself."""
+    return table.get(value, value)
+
+
+UNITS_HI = {
+    "metre": "मीटर", "meter": "मीटर", "gram": "ग्राम", "kg": "किलो",
+    "inch": "इंच", "feet": "फुट", "cm": "सेंटीमीटर", "x": "×",
+}
+
+
+def _measure_hi(value: str | None) -> str:
+    """"5.5 metre" -> "5.5 मीटर". Numbers stay, units become Hindi."""
+    if not value:
+        return ""
+    out = value
+    for english, hindi in UNITS_HI.items():
+        out = re.sub(rf"\b{english}\b", hindi, out)
+    return out
+
+
+def _title_hi(craft: Craft, facts: nlp.TranscriptFacts, vision: VisionReading | None) -> str:
+    from .taxonomy import colour_labels
+
+    colours = colour_labels()
+    noun_hi = {
+        "Saree": "साड़ी", "Dupatta": "दुपट्टा", "Stole": "स्टोल", "Scarf": "स्कार्फ़",
+        "Shawl": "शॉल", "Kurta": "कुर्ता", "Kurti": "कुर्ती", "Suit Set": "सूट",
+        "Painting": "चित्र", "Artwork": "कलाकृति", "Vase": "गुलदस्ता", "Pot": "मटका",
+        "Bowl": "कटोरी", "Plate": "थाली", "Diya": "दीया", "Lamp": "दीपक",
+        "Toy": "खिलौना", "Basket": "टोकरी", "Bag": "थैला", "Earrings": "बालियाँ",
+        "Jhumka": "झुमका", "Necklace": "हार", "Bangles": "चूड़ियाँ", "Idol": "मूर्ति",
+        "Figurine": "प्रतिमा", "Quilt": "रज़ाई", "Throw": "चादर",
+        "Cushion Cover": "कुशन कवर", "Table Runner": "टेबल रनर", "Rug": "दरी",
+        "Carpet": "कालीन", "Storage Box": "डिब्बा", "Mask": "मुखौटा",
+        "Wall Hanging": "दीवार सज्जा",
+    }
+    noun = noun_hi.get(facts.product_noun or "", "") or craft.unit
+    colour = facts.colours[0] if facts.colours else (
+        vision.dominant_colour if vision and vision.ok else ""
+    )
+    colour_word = _hi(colour, colours) if colour else ""
+    parts = [p for p in (colour_word, craft.name_hi, noun) if p]
+    return " ".join(dict.fromkeys(parts))[:70]
+
+
+def _short_description_hi(craft: Craft, facts: nlp.TranscriptFacts, vision: VisionReading | None) -> str:
+    from .taxonomy import REGION_HI, colour_labels
+
+    colour = facts.colours[0] if facts.colours else (
+        vision.dominant_colour if vision and vision.ok else ""
+    )
+    colour_word = _hi(colour, colour_labels()) if colour else ""
+    region = facts.regions[0] if facts.regions else (craft.regions[0] if craft.regions else "भारत")
+    region_hi = _hi(region, REGION_HI)
+    colour_part = f"{colour_word} रंग की " if colour_word else ""
+    return f"{region_hi} में हाथ से बनी {colour_part}{craft.name_hi} कृति।"[:200]
+
+
+def _detailed_description_hi(
+    craft: Craft, facts: nlp.TranscriptFacts, vision: VisionReading | None
+) -> str:
+    from .taxonomy import MATERIAL_HI, REGION_HI, TECHNIQUE_HI, colour_labels
+
+    colours = colour_labels()
+    region = facts.regions[0] if facts.regions else (craft.regions[0] if craft.regions else "भारत")
+    technique = facts.techniques[0] if facts.techniques else ""
+    technique_hi = _hi(technique, TECHNIQUE_HI) if technique else "पारंपरिक हस्तकला"
+
+    lines = [
+        f"यह {_hi(region, REGION_HI)} की {craft.name_hi} है, जिसे {technique_hi} "
+        f"तकनीक से बनाया गया है।"
+    ]
+    if vision and vision.ok and vision.palette:
+        shades = "、".join(_hi(c.name, colours) for c in vision.palette[:3]).replace("、", ", ")
+        density = {
+            "very intricate": "बहुत बारीक", "intricate": "बारीक",
+            "moderate": "संतुलित", "minimal": "सादा",
+        }.get(vision.motif_density, "संतुलित")
+        lines.append(f"इसमें {shades} रंग हैं और डिज़ाइन का काम {density} है।")
+
+    details = []
+    if facts.materials:
+        details.append(f"{_hi(facts.materials[0], MATERIAL_HI)} से बनी है")
+    if facts.size:
+        details.append(f"नाप {_measure_hi(facts.size)} है")
+    if facts.weight:
+        details.append(f"वज़न {_measure_hi(facts.weight)} है")
+    if details:
+        lines.append("यह " + ", ".join(details) + "।")
+
+    if facts.making_days:
+        lines.append(f"इस एक कृति को बनाने में कारीगर को {facts.making_days:g} दिन लगे।")
+    elif facts.making_hours:
+        lines.append(f"इस एक कृति को बनाने में कारीगर को {facts.making_hours:g} घंटे लगे।")
+
+    if facts.mentions_natural_dye:
+        lines.append("इसमें केवल प्राकृतिक रंगों का प्रयोग हुआ है, कोई रसायन नहीं।")
+
+    lines.append(
+        "हाथ से बनी होने के कारण डिज़ाइन में हल्का अंतर आ सकता है — यह इसकी "
+        "पहचान है, कोई कमी नहीं।"
+    )
+    return " ".join(lines)
+
+
+def _story_hi(craft: Craft) -> str:
+    return (
+        f"{craft.name_hi} की यह कृति पीढ़ियों से चली आ रही कारीगरी का हिस्सा है। "
+        f"इसे बनाने में लगा हर घंटा उस कारीगर का है जिसने इसे बनाया।"
+    )
+
+
 def _tags(craft: Craft, facts: nlp.TranscriptFacts, vision: VisionReading | None) -> list[str]:
     tags = {craft.category.lower(), craft.name.lower(), "handmade", "artisan made"}
     tags.update(t.lower() for t in facts.techniques)
@@ -284,6 +408,12 @@ def build_listing(
         "short_description": _short_description(craft, facts, vision),
         "detailed_description": _detailed_description(craft, facts, vision),
         "story": story,
+        # Hindi copy is generated, not translated — the problem statement asks
+        # for professional descriptions in both languages.
+        "title_hi": _title_hi(craft, facts, vision),
+        "short_description_hi": _short_description_hi(craft, facts, vision),
+        "detailed_description_hi": _detailed_description_hi(craft, facts, vision),
+        "story_hi": _story_hi(craft),
         "craft_type": craft.name,
         "craft_key": craft.key,
         "category": craft.category,
@@ -348,7 +478,7 @@ def merge_llm(listing: dict, enriched: dict | None) -> dict:
         return listing
     safe_copy_fields = (
         "title", "short_description", "detailed_description", "story",
-        "title_hi", "short_description_hi",
+        "title_hi", "short_description_hi", "detailed_description_hi", "story_hi",
     )
     for key in safe_copy_fields:
         value = enriched.get(key)

@@ -17,7 +17,7 @@ a ranked list of real buyers with a message already written to each one.
 
 | Step | What the artisan does | What PAVHAN does |
 |---|---|---|
-| 1 | Photographs the piece | Reads colour, texture, intricacy and symmetry from the pixels; scores the photo and coaches them if it is dark, blurred or cluttered |
+| 1 | Photographs the piece | **AI Product Studio**: removes the cluttered background, corrects the colour cast and exposure, sharpens the detail and crops to a 1600×1600 e-commerce master — with a real before/after |
 | 2 | Speaks in Hindi, Hinglish or English | Extracts material, colour, size, weight, days of work, origin and care from the actual sentence — and asks for what is missing |
 | 3 | Checks the draft | A written listing, story, tags and SEO keywords — nothing invented that was not said or seen |
 | 4 | Sees the price | Floor / recommended / premium, with a breakdown they can show to any buyer, plus what a middleman, a bazaar stall, a boutique and an export house would each pay |
@@ -71,7 +71,7 @@ Other modes:
 ```bash
 ./run.sh dev        # two ports with hot reload: API :8000, app :5173
 ./run.sh backend    # API only
-./run.sh test       # 42-check API smoke test against a running server
+./run.sh test       # 62-check API smoke test against a running server
 ```
 
 ### Optional: connect Claude
@@ -133,6 +133,31 @@ The result carries a confidence score and the evidence in plain language
 palette matches this craft"). Below ~55% confidence PAVHAN says it is unsure and
 asks the artisan to confirm, rather than guessing with a straight face.
 
+### What the AI Product Studio actually does
+
+The problem statement names this feature first, and it runs entirely on the
+device — OpenCV only, no model download, no API key, no network:
+
+1. **Segment the product.** A background colour model is clustered from the
+   border (a room is a wall *and* a floor, not one colour), combined with a
+   centre prior and an edge map, and used to seed GrabCut. The mask is then
+   cleaned, hole-filled and feathered.
+2. **Correct the colour — measured on the product, not the room.** A photo of
+   a tan basket against a brown wall is mostly wall, so correcting against the
+   whole frame drains the basket along with the wall. Segmentation therefore
+   runs *before* white balance and exposure.
+3. **Lift the light.** Shades-of-grey white balance, a gamma lift to a studio
+   brightness, CLAHE for local contrast, and unsharp masking for the weave.
+4. **Compose and frame.** White, studio gradient with a contact shadow, or a
+   transparent PNG; then cropped to the product, squared and resized to 1600px.
+
+It refuses when it should. Two signals have to agree before a cut-out is
+trusted: the kept and discarded regions must differ in Lab, **and** they must
+differ by more than the picture differs from itself. A product that already
+fills the frame, or one shot against a cloth of its own shade, is left alone
+with an explanation — "shoot against a plain white cloth" — instead of being
+silently mangled.
+
 ### How the price is built
 
 ```
@@ -192,6 +217,7 @@ Full interactive documentation at `/docs`. The endpoints that matter:
 
 | Endpoint | Purpose |
 |---|---|
+| `POST /api/studio/enhance` | Phone snapshot → e-commerce product photo, with a before/after and a report |
 | `POST /api/ai/analyze-image` | Colour, texture, intricacy and photo coaching |
 | `POST /api/ai/generate-listing` | Photo + voice → complete priced listing |
 | `POST /api/ai/coach` | Live "what have you not told me yet" while speaking |
@@ -203,7 +229,10 @@ Full interactive documentation at `/docs`. The endpoints that matter:
 | `GET /api/pricing/market-context` | Season curve and channel margins |
 | `GET /api/buyers/match/{product_id}` | Scored buyers for one product |
 | `GET /api/buyers/{id}/recommended-products` | The mirror, for the B2B side |
+| `POST /api/assistant/ask` | Free-form question → answer grounded in this artisan's data |
+| `POST /api/auth/request-otp` · `verify-otp` | Mobile sign-in |
 | `GET /api/voice/scripts` | Every screen's guide copy |
+| `GET /api/voice/labels` | Hindi names for craft types, categories, materials, regions |
 | `GET /api/artisans/{id}/dashboard` | Earnings, pipeline, uplift vs middleman |
 
 ---
@@ -214,7 +243,7 @@ Full interactive documentation at `/docs`. The endpoints that matter:
 ./run.sh test
 ```
 
-42 checks covering the claims this project actually makes: two different photos
+62 checks covering the claims this project actually makes: two different photos
 must read differently, two different voice notes must produce different crafts
 and different prices, a Hindi query and an English query must find the same
 listing, every engine explanation must exist in both languages, and different
@@ -225,7 +254,7 @@ products must match different buyers.
 ## Tech
 
 React 18 · Vite 5 · React Router 6 · FastAPI · SQLAlchemy 2 · Pydantic 2 ·
-Pillow · SQLite · Web Speech API · optional Claude API
+Pillow · OpenCV · NumPy · SQLite · Web Speech API · optional Claude API
 
 No CSS framework and no component library — the interface is built from a small
 design system in `frontend/src/styles/theme.css` drawn from the crafts

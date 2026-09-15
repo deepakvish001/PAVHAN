@@ -12,6 +12,8 @@ import SearchPage from './pages/SearchPage'
 import ProductDetail from './pages/ProductDetail'
 import B2BHome from './pages/B2BHome'
 import Profile from './pages/Profile'
+import Login from './pages/Login'
+import Assistant from './pages/Assistant'
 
 /** Screens behind the role gate — visiting them without a role sends you to
  *  the front door, which is where the app asks who you are. */
@@ -45,6 +47,8 @@ export default function App() {
           <Route path="/product/:id" element={<ProductDetail />} />
           <Route path="/b2b" element={<B2BHome />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/assistant" element={<Assistant />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>

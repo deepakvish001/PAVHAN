@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+from datetime import date
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..models import Product
 from ..schemas import PriceRequest
+from ..services import pricing_ml
 from ..services.pricing import CHANNEL_MARGIN, SEASON_INDEX, SEASON_LABEL, recommend_price
 from ..services.taxonomy import CRAFT_INDEX, CRAFTS
 
@@ -27,8 +30,21 @@ def _resolve_craft(craft_key: str | None, craft_type: str | None):
     return None
 
 
+@router.get("/model")
+def model_card() -> dict:
+    """What the machine-learning model is and how accurate it measured itself to be."""
+    return pricing_ml.model_card()
+
+
 @router.post("/recommend")
 def recommend(payload: PriceRequest) -> dict:
+    """Price a piece with both engines.
+
+    The cost-plus engine answers "what is this worth and here is the
+    arithmetic"; the trained model answers "what does this market pay for
+    pieces like this". Both are returned, along with a reconciliation that
+    says what to do when they disagree.
+    """
     craft = _resolve_craft(payload.craft_key, payload.craft_type)
     if not craft:
         raise HTTPException(
@@ -48,8 +64,32 @@ def recommend(payload: PriceRequest) -> dict:
         channel=payload.channel,
         quantity=payload.quantity,
         artisan_expectation=payload.artisan_expectation,
+        labour_cost=payload.labour_cost,
+        other_cost=payload.other_cost,
+        desired_margin_percent=payload.desired_margin_percent,
     )
-    return rec.to_dict()
+    out = rec.to_dict()
+
+    hours = payload.making_hours or (
+        payload.making_days * 6 if payload.making_days else craft.labour_hours)
+    ml = pricing_ml.predict(
+        craft,
+        material_cost=payload.material_cost,
+        labour_hours=hours,
+        skill_band=payload.skill_band,
+        complexity=payload.complexity,
+        quality_score=payload.quality_score,
+        gi_tagged=payload.gi_tagged,
+        region=payload.region,
+        month=date.today().month,
+        channel=payload.channel,
+        quantity=payload.quantity,
+        natural_dye=payload.natural_dye,
+        sustainability=payload.sustainability_score,
+    )
+    out["ml"] = ml
+    out["reconciliation"] = pricing_ml.reconcile(rec.recommended, ml)
+    return out
 
 
 @router.get("/product/{product_id}")
@@ -102,8 +142,6 @@ def crafts() -> dict:
 @router.get("/market-context")
 def market_context() -> dict:
     """Season and channel context the pricing screen explains to the artisan."""
-    from datetime import date
-
     month = date.today().month
     return {
         "month": month,

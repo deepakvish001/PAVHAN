@@ -4,12 +4,13 @@ from __future__ import annotations
 
 import time
 import uuid
+from datetime import date
 
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from fastapi.responses import JSONResponse
 
 from ..config import MEDIA_DIR, settings
-from ..services import llm, nlp
+from ..services import llm, nlp, pricing_ml
 from ..services.listing import build_listing, merge_llm
 from ..services.pricing import recommend_price
 from ..services.taxonomy import CATEGORIES, CRAFTS, MATERIALS
@@ -164,7 +165,25 @@ async def generate_listing(
     listing["price"] = price.recommended
     listing["price_floor"] = price.floor
     listing["price_premium"] = price.premium
-    listing["pricing_meta"] = price.to_dict()
+    pricing_meta = price.to_dict()
+    # The listing screen shows the arithmetic; the price screen shows both
+    # engines, so the ML view has to travel with the listing.
+    ml = pricing_ml.predict(
+        craft,
+        material_cost=None,
+        labour_hours=facts.making_hours or (
+            facts.making_days * 6 if facts.making_days else craft.labour_hours),
+        complexity=vision.complexity if vision and vision.ok else 1.3,
+        quality_score=listing["quality_score"],
+        gi_tagged=listing["gi_tagged"],
+        region=listing.get("region", ""),
+        month=date.today().month,
+        natural_dye=facts.mentions_natural_dye,
+        sustainability=listing["sustainability_score"],
+    )
+    pricing_meta["ml"] = ml
+    pricing_meta["reconciliation"] = pricing_ml.reconcile(price.recommended, ml)
+    listing["pricing_meta"] = pricing_meta
     listing["lead_time_days"] = max(
         3, int((facts.making_days or (facts.making_hours or craft.labour_hours) / 6) + 2)
     )
@@ -176,7 +195,7 @@ async def generate_listing(
 @router.post("/coach")
 def coach(transcript: str = Form(""), language: str = Form("hi")) -> dict:
     """Live coaching while the artisan is still speaking."""
-    facts = nlp.extract(transcript)
+    facts = nlp.extract(transcript, hint=language)
     prompts_hi = {
         "material": "यह किस चीज़ से बना है? जैसे रेशम, मिट्टी, लकड़ी।",
         "colour": "इसका मुख्य रंग कौन सा है?",
@@ -191,11 +210,14 @@ def coach(transcript: str = Form(""), language: str = Form("hi")) -> dict:
         "making time": "How many days did it take to make?",
         "place of origin": "Which town or district are you from?",
     }
+    # Coaching prompts exist in Hindi and English; a Tamil speaker gets the
+    # Hindi prompt only if they chose Hindi, otherwise English.
     prompts = prompts_hi if language == "hi" else prompts_en
     return {
         "completeness": facts.completeness,
         "missing_fields": facts.missing_fields,
         "next_question": prompts.get(facts.missing_fields[0]) if facts.missing_fields else None,
+        "spoken_language": facts.language,
         "captured": {
             "materials": facts.materials, "colours": facts.colours,
             "size": facts.size, "weight": facts.weight,

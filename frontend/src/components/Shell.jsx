@@ -111,9 +111,36 @@ export function Toasts() {
   )
 }
 
+/** A quiet strip that only appears when there is something to say. */
+export function StatusStrip() {
+  const { pwa, lang, t } = useApp()
+  if (pwa.online && !pwa.updateReady) return null
+  return (
+    <div
+      style={{
+        padding: '7px 14px', fontSize: 11.5, fontWeight: 600, textAlign: 'center',
+        background: pwa.online ? 'var(--leaf)' : 'var(--clay)', color: '#fff',
+      }}
+      lang={lang}
+      role="status"
+    >
+      {pwa.online
+        ? (
+          <button onClick={pwa.applyUpdate}
+                  style={{ background: 'none', border: 0, color: '#fff', fontWeight: 700 }}>
+            {t('नया संस्करण तैयार है — दबाकर चालू कीजिए', 'A new version is ready — tap to load it')}
+          </button>
+        )
+        : t('इंटरनेट नहीं है — सहेजी हुई जानकारी दिख रही है। काम करते रहिए।',
+             'No internet — showing saved data. Keep working; it will sync.')}
+    </div>
+  )
+}
+
 export function Screen({ children, nav = true, className = '' }) {
   return (
     <>
+      <StatusStrip />
       <div className={`app-body ${nav ? '' : 'no-nav'} ${className}`}>{children}</div>
       {nav && <BottomNav />}
       <Toasts />

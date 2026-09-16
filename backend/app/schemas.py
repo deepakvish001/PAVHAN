@@ -147,13 +147,21 @@ class PriceRequest(BaseModel):
     making_hours: float | None = None
     region: str = ""
     skill_band: str | None = None
-    material_cost: float | None = None
     quality_score: int = 70
     gi_tagged: bool | None = None
     natural_dye: bool = False
     channel: str = "direct"
     quantity: int = 1
     artisan_expectation: float | None = None
+    sustainability_score: int = 65
+
+    # What the artisan actually spent. The problem statement names raw
+    # material cost explicitly, and a price built from a craft-wide average
+    # is not the artisan's price — it is the category's.
+    material_cost: float | None = None
+    labour_cost: float | None = None
+    other_cost: float | None = None
+    desired_margin_percent: float | None = None
 
 
 class BuyerOut(BaseModel):

@@ -2,17 +2,28 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import { Screen, TopBar } from '../components/Shell'
-import { aiStatus, health, platformStats } from '../api/client'
+import { aiStatus, health, platformStats, priceModelCard, voiceLanguages } from '../api/client'
 
 export default function Profile() {
   const navigate = useNavigate()
-  const { t, lang, setLang, role, setRole, user, voiceOn, setVoiceOn, assistant, sayRaw, L } = useApp()
+  const { t, lang, setLang, role, setRole, user, voiceOn, setVoiceOn, assistant,
+          sayRaw, L, pwa, theme, toggleTheme } = useApp()
   const [status, setStatus] = useState(null)
   const [stats, setStats] = useState(null)
+  const [modelCard, setModelCard] = useState(null)
+  const [langCount, setLangCount] = useState(0)
 
   useEffect(() => {
-    Promise.all([aiStatus().catch(() => null), platformStats().catch(() => null), health().catch(() => null)])
-      .then(([ai, st]) => { setStatus(ai); setStats(st) })
+    Promise.all([
+      aiStatus().catch(() => null),
+      platformStats().catch(() => null),
+      health().catch(() => null),
+      priceModelCard().catch(() => null),
+      voiceLanguages().catch(() => null),
+    ]).then(([ai, st, , model, langs]) => {
+      setStatus(ai); setStats(st); setModelCard(model)
+      setLangCount(langs?.languages?.length || 0)
+    })
   }, [])
 
   const ROLES = [
@@ -64,6 +75,37 @@ export default function Profile() {
             </div>
           </div>
 
+          {/* Installing matters more than it sounds: an icon on the home
+              screen is what turns this from "a website someone showed me"
+              into something an artisan opens on their own next week. */}
+          {(pwa.canInstall || pwa.installed) && (
+            <div className="card" style={{ background: 'var(--marigold-soft)',
+                                           borderColor: 'var(--line)' }}>
+              <div className="row-between">
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 700, fontSize: 13.5 }} lang={lang}>
+                    📲 {pwa.installed
+                      ? t('ऐप इंस्टॉल है', 'Installed as an app')
+                      : t('फ़ोन में ऐप की तरह लगाइए', 'Install it like an app')}
+                  </div>
+                  <div className="muted" style={{ fontSize: 11.5, lineHeight: 1.55, marginTop: 3 }}
+                       lang={lang}>
+                    {pwa.installed
+                      ? t('बिना इंटरनेट भी खुलेगा और सहेजा काम दिखेगा।',
+                           'It opens without internet and shows your saved work.')
+                      : t('होम स्क्रीन पर आइकॉन आ जाएगा, इंटरनेट न हो तब भी खुलेगा।',
+                           'You get an icon on your home screen, and it opens offline.')}
+                  </div>
+                </div>
+                {!pwa.installed && (
+                  <button className="btn btn-gold btn-sm" onClick={pwa.install}>
+                    {t('लगाइए', 'Install')}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
           <div className="card">
             <div className="row-between" style={{ marginBottom: 12 }}>
               <div>
@@ -81,6 +123,21 @@ export default function Profile() {
               >
                 {voiceOn ? t('चालू', 'On') : t('बंद', 'Off')}
               </button>
+            </div>
+            <div className="row-between" style={{ marginBottom: 12 }}>
+              <div style={{ fontWeight: 700, fontSize: 13.5 }} lang={lang}>
+                {theme === 'dark' ? '🌙' : '☀️'} {t('रंग-रूप', 'Appearance')}
+              </div>
+              <div className="row" style={{ gap: 7 }}>
+                <button className={`chip ${theme === 'light' ? 'active' : ''}`}
+                        onClick={() => theme === 'dark' && toggleTheme()}>
+                  {t('उजला', 'Light')}
+                </button>
+                <button className={`chip ${theme === 'dark' ? 'active' : ''}`}
+                        onClick={() => theme === 'light' && toggleTheme()}>
+                  {t('गहरा', 'Dark')}
+                </button>
+              </div>
             </div>
             <div className="row-between">
               <div style={{ fontWeight: 700, fontSize: 13.5 }} lang={lang}>
@@ -125,6 +182,9 @@ export default function Profile() {
                 [t('फोटो पढ़ना', 'Image understanding'), status.vision],
                 [t('आवाज़ से लिखना', 'Speech to text'), status.speech_to_text],
                 [t('ज्ञात शिल्प', 'Crafts known'), status.crafts_known],
+                [t('बोलने की भाषाएँ', 'Spoken languages'), langCount || '—'],
+                [t('दाम का मॉडल', 'Pricing model'),
+                 modelCard?.available ? `${modelCard.metrics.median_abs_pct}% median error` : '—'],
               ].map(([label, value]) => (
                 <div
                   key={label}

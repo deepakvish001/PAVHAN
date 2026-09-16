@@ -38,6 +38,11 @@ echo Installing Python packages...
 python -m pip install -q --upgrade pip
 python -m pip install -q -r requirements.txt
 
+if not exist app\ml\price_model.joblib (
+  echo Training the pricing model ^(first run only, ~15s^)...
+  python -m app.ml.train >nul
+)
+
 if "%MODE%"=="test" (
   python tests\smoke_test.py
   goto :eof

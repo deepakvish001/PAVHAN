@@ -330,6 +330,105 @@ def main() -> int:
     check("craft, category, material and region labels exist",
           all(labels.get(k) for k in ("crafts", "categories", "materials", "regions")))
 
+    print("\n[regional languages — PS: voice notes in regional languages]")
+    langs = get("/api/voice/languages")
+    check("ten-plus input languages offered", len(langs["languages"]) >= 11,
+          f'{len(langs["languages"])} languages')
+    check("output is fixed to English and Hindi",
+          set(langs["output_languages"]) == {"en", "hi"})
+    check("each language carries a speech locale",
+          all(l.get("speech_locale") and l.get("tts_locale") for l in langs["languages"]))
+
+    regional = {
+        "ta": "இது கையால் நெய்த சிவப்பு பட்டு புடவை, பத்து நாள் ஆனது",
+        "bn": "এটি হাতে বোনা লাল রেশম শাড়ি, বারো দিন লেগেছে",
+        "gu": "આ હાથથી બનાવેલી લાલ બાંધણી ઓઢણી છે, પાંચ દિવસ લાગ્યા",
+        "or": "ଏହା ହାତରେ ବୁଣା ଲାଲ ରେଶମ ଶାଢ଼ୀ, ଦଶ ଦିନ ଲାଗିଲା",
+        "mr": "ही हाताने विणलेली लाल रेशीम साडी आहे, बारा दिवस लागले",
+    }
+    crafts_seen, failures = set(), []
+    for code, sentence in regional.items():
+        listed = post_multipart("/api/ai/generate-listing",
+                                {"transcript": sentence, "language": code})
+        crafts_seen.add(listed["craft_type"])
+        if listed.get("spoken_language") != code:
+            failures.append(f'{code} detected as {listed.get("spoken_language")}')
+        if not listed.get("colour") or not listed.get("detailed_description_hi"):
+            failures.append(f"{code} lost facts")
+    check("regional speech is understood", not failures, "; ".join(failures))
+    check("regional languages map to their own crafts", len(crafts_seen) >= 4,
+          ", ".join(sorted(crafts_seen)))
+
+    print("\n[ML pricing — PS: a machine learning algorithm]")
+    card = get("/api/pricing/model")
+    check("a trained model is served", card.get("available"))
+    check("it is a real regressor", "GradientBoosting" in card.get("algorithm", ""))
+    check("accuracy is measured and published",
+          card["metrics"]["median_abs_pct"] < 15,
+          f'median error {card["metrics"]["median_abs_pct"]}%')
+    check("held-out accuracy is reported",
+          card["metrics"]["within_20pct"] > 75,
+          f'{card["metrics"]["within_20pct"]}% within 20%')
+
+    priced = post_json("/api/pricing/recommend", {
+        "craft_key": "banarasi_silk", "making_days": 12, "complexity": 1.4,
+        "quality_score": 85, "material_cost": 3200,
+    })
+    check("both engines answer", bool(priced.get("ml")) and priced["recommended"] > 0)
+    check("the model explains this specific price",
+          len(priced["ml"]["drivers"]) >= 3,
+          ", ".join(d["feature"] for d in priced["ml"]["drivers"][:3]))
+    check("drivers are bilingual",
+          all(d.get("label") and d.get("label_hi") for d in priced["ml"]["drivers"]))
+    check("the two engines are reconciled, not averaged blindly",
+          bool(priced["reconciliation"]["note"])
+          and priced["reconciliation"]["source"] in ("blended", "cost-anchored", "rules-only"))
+
+    print("\n[raw material costs — PS: based on raw material costs]")
+    with_costs = post_json("/api/pricing/recommend", {
+        "craft_key": "bamboo_cane", "making_hours": 8, "material_cost": 150,
+        "labour_cost": 900, "other_cost": 60, "desired_margin_percent": 25,
+    })
+    labels = {line["label"] for line in with_costs["breakdown"]}
+    check("the artisan's own costs are used", "Other costs" in labels)
+    check("the stated margin is applied", with_costs["margin_percent"] == 25.0,
+          f'{with_costs["margin_percent"]}%')
+    default_costs = post_json("/api/pricing/recommend",
+                              {"craft_key": "bamboo_cane", "making_hours": 8})
+    check("stated costs change the price",
+          with_costs["recommended"] != default_costs["recommended"],
+          f'{default_costs["recommended"]} -> {with_costs["recommended"]}')
+
+    print("\n[government e-marketplace — PS: or government e-marketplaces]")
+    any_product = get("/api/products?limit=1")[0]
+    pid = any_product["id"]
+    ready = get(f"/api/export/readiness/{pid}")
+    check("readiness is assessed", "score" in ready and "blocking" in ready)
+    check("an HSN code is assigned", bool(ready.get("hsn_code")),
+          f'{ready.get("hsn_code")} — {ready.get("hsn_description")}')
+    gem = get(f"/api/export/{pid}?format=gem")
+    check("GeM catalogue fields produced",
+          all(k in gem for k in ("product_name", "hsn_code", "country_of_origin",
+                                 "offer_price", "specifications")))
+    ondc = get(f"/api/export/{pid}?format=ondc")
+    check("ONDC item shape produced",
+          "descriptor" in ondc and "@ondc/org/statutory_reqs_packaged_commodities" in ondc)
+    check("statutory declarations are filled",
+          bool(ondc["@ondc/org/statutory_reqs_packaged_commodities"]
+               ["month_year_of_manufacture_packing_import"]))
+    check("the integration limit is stated honestly",
+          "credentials" in (ready.get("note") or "").lower())
+
+    print("\n[installable app — PS: cross-platform mobile application]")
+    for path, kind in (("/manifest.webmanifest", "manifest"),
+                       ("/sw.js", "service worker"),
+                       ("/icon.svg", "app icon")):
+        try:
+            with urllib.request.urlopen(f"{BASE}{path}", timeout=10) as r:
+                check(f"{kind} is served", r.status == 200)
+        except Exception as exc:
+            check(f"{kind} is served", False, str(exc))
+
     print("\n[artisan dashboard]")
     dash = get(f"/api/artisans/{artisan['id']}/dashboard")
     check("dashboard has stats", dash["stats"]["products"] > 0)

@@ -211,9 +211,16 @@ export default function ProductDetail() {
           </button>
 
           {role === 'artisan' && (
-            <button className="btn btn-soft btn-block" onClick={() => navigate(`/artisan/buyers?product=${product.id}`)}>
-              🤝 {t('इसके लिए खरीदार देखिए', 'See buyers for this piece')}
-            </button>
+            <>
+              <button className="btn btn-soft btn-block"
+                      onClick={() => navigate(`/artisan/buyers?product=${product.id}`)}>
+                🤝 {t('इसके लिए खरीदार देखिए', 'See buyers for this piece')}
+              </button>
+              <button className="btn btn-soft btn-block"
+                      onClick={() => navigate(`/export/${product.id}`)}>
+                🏛️ {t('सरकारी बाज़ार के लिए तैयार कीजिए', 'Prepare for a government marketplace')}
+              </button>
+            </>
           )}
 
           {similar.length > 0 && (

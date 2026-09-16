@@ -15,7 +15,8 @@ from . import __version__
 from .config import MEDIA_DIR, settings
 from .database import Base, SessionLocal, engine
 from .routers import (
-    ai, assistant, auth, buyers, pricing, products, search, studio, users, voice,
+    ai, assistant, auth, buyers, export, pricing, products, search, studio,
+    users, voice,
 )
 from .seed import seed
 from .services import llm, search_engine
@@ -67,7 +68,7 @@ app.add_middleware(
 
 for router in (products.router, search.router, ai.router, studio.router,
                pricing.router, buyers.router, voice.router, users.router,
-               assistant.router, auth.router):
+               assistant.router, auth.router, export.router):
     app.include_router(router)
 
 MEDIA_DIR.mkdir(parents=True, exist_ok=True)
@@ -102,6 +103,18 @@ def health() -> dict:
     }
 
 
+# Files the browser insists on finding at the site root. The service worker in
+# particular is scoped to the directory it is served from, so /sw.js is the
+# only path that lets it control the whole app.
+ROOT_FILES = {
+    "sw.js": "application/javascript",
+    "manifest.webmanifest": "application/manifest+json",
+    "icon.svg": "image/svg+xml",
+    "favicon.ico": "image/x-icon",
+    "robots.txt": "text/plain",
+}
+
+
 @app.get("/{full_path:path}", include_in_schema=False)
 def spa_fallback(full_path: str):
     """Client-side routes (/artisan, /product/abc) must return the app shell.
@@ -110,6 +123,19 @@ def spa_fallback(full_path: str):
     """
     if full_path.startswith(("api/", "docs", "redoc", "openapi.json", "media/", "seed/", "assets/")):
         raise HTTPException(404, "Not found")
+
+    if full_path in ROOT_FILES:
+        asset = DIST_DIR / full_path
+        if asset.exists():
+            return FileResponse(
+                asset,
+                media_type=ROOT_FILES[full_path],
+                # The worker must be allowed to update, or an artisan stays on
+                # a stale build forever.
+                headers={"Cache-Control": "no-cache"} if full_path == "sw.js" else None,
+            )
+        raise HTTPException(404, "Not found")
+
     index = DIST_DIR / "index.html"
     if index.exists():
         return FileResponse(index)

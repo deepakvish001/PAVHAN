@@ -122,6 +122,9 @@ def recommend_price(
     channel: str = "direct",
     quantity: int = 1,
     artisan_expectation: float | None = None,
+    labour_cost: float | None = None,
+    other_cost: float | None = None,
+    desired_margin_percent: float | None = None,
     today: date | None = None,
 ) -> PriceRecommendation:
     rec = PriceRecommendation(channel=channel)
@@ -135,7 +138,11 @@ def recommend_price(
 
     # --- cost side ---------------------------------------------------------
     complexity = max(0.85, min(complexity, 2.2))
-    labour = hours * hourly * complexity
+    # A stated labour cost wins over the computed one: the artisan knows what
+    # they paid their own hands, or their helper's.
+    labour = labour_cost if labour_cost is not None else hours * hourly * complexity
+    if labour_cost is not None:
+        hours_note = "as entered by the artisan"
     rec.breakdown.append(
         PriceLine("Material", "कच्चा माल", round(mat_cost, 2),
                   f"{craft.default_material}, market rate for one {craft.unit}",
@@ -176,11 +183,17 @@ def recommend_price(
                       "बिना रसायन की रंगाई के लिए खरीदार ज़्यादा देते हैं")
         )
 
-    packaging = PACKAGING_BY_CATEGORY.get(craft.category, 70)
+    packaging = other_cost if other_cost is not None else PACKAGING_BY_CATEGORY.get(
+        craft.category, 70)
     rec.breakdown.append(
-        PriceLine("Packaging & handling", "पैकिंग", float(packaging),
-                  "Protective craft-safe packaging",
-                  "सामान सुरक्षित पहुँचाने की पैकिंग")
+        PriceLine(
+            "Other costs" if other_cost is not None else "Packaging & handling",
+            "अन्य ख़र्च" if other_cost is not None else "पैकिंग",
+            float(packaging),
+            "As entered by you" if other_cost is not None
+            else "Protective craft-safe packaging",
+            "आपके बताए अनुसार" if other_cost is not None
+            else "सामान सुरक्षित पहुँचाने की पैकिंग")
     )
 
     quality_adj = (mat_cost + labour) * ((quality_score - 70) / 100) * 0.35
@@ -200,7 +213,8 @@ def recommend_price(
     rec.season_label = SEASON_LABEL.get(today.month, "")
     rec.season_label_hi = SEASON_LABEL_HI.get(today.month, "")
 
-    margin = CHANNEL_MARGIN.get(channel, 0.12)
+    margin = (desired_margin_percent / 100 if desired_margin_percent is not None
+              else CHANNEL_MARGIN.get(channel, 0.12))
     if quantity >= 50:
         margin *= 0.8  # bulk orders trade margin for volume
     elif quantity >= 20:

@@ -7,6 +7,7 @@ venv/
 
 # PAVHAN runtime state
 backend/pavhan.db
+backend/app/ml/price_model.joblib
 backend/media/
 backend/.env
 

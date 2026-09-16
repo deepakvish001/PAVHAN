@@ -1,0 +1,46 @@
+{
+  "name": "PAVHAN — AI-Powered Growth for Artisan Craft",
+  "short_name": "PAVHAN",
+  "description": "Photograph your craft, speak about it, and get a listing, a fair price and matched buyers.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#161B33",
+  "theme_color": "#161B33",
+  "lang": "hi",
+  "dir": "ltr",
+  "categories": [
+    "business",
+    "shopping",
+    "productivity"
+  ],
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Add a product",
+      "short_name": "Add",
+      "url": "/add",
+      "description": "Photograph and describe a new piece"
+    },
+    {
+      "name": "Ask the assistant",
+      "short_name": "Assistant",
+      "url": "/assistant",
+      "description": "Ask about prices, earnings or how to photograph"
+    }
+  ]
+}

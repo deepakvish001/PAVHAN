@@ -19,7 +19,7 @@ import re
 from dataclasses import dataclass, field
 
 from . import nlp
-from .taxonomy import CRAFTS, CRAFT_INDEX, Craft
+from .taxonomy import CRAFTS, CRAFT_INDEX, LANGUAGE_AFFINITY, Craft
 from .vision import VisionReading
 
 
@@ -34,6 +34,9 @@ class CraftGuess:
 def infer_craft(facts: nlp.TranscriptFacts, vision: VisionReading | None) -> CraftGuess:
     scores: dict[str, float] = {}
     evidence: dict[str, list[str]] = {}
+    # The language an artisan speaks is itself evidence about which cluster
+    # they work in — "silk saree" in Tamil means Kanjeevaram, not Banarasi.
+    affinity = set(LANGUAGE_AFFINITY.get(facts.language, []))
 
     for craft in CRAFTS:
         text_score = facts.craft_scores.get(craft.key, 0.0)
@@ -71,12 +74,18 @@ def infer_craft(facts: nlp.TranscriptFacts, vision: VisionReading | None) -> Cra
                 why.append(f"{r} is a home cluster for this craft")
                 break
 
+        language_bonus = 0.0
+        if craft.key in affinity:
+            language_bonus = 0.28
+            why.append(f"you spoke in a language of this craft's home region")
+
         total = (
             text_score * 0.60
             + colour_score * 0.22
             + min(shape_score, 1.0) * 0.18
             + material_bonus
             + region_bonus
+            + language_bonus
         )
         if total > 0:
             scores[craft.key] = round(total, 4)
@@ -385,7 +394,9 @@ def build_listing(
     language: str = "hi",
 ) -> dict:
     """The deterministic on-device generator. Always produces a result."""
-    facts = nlp.extract(transcript)
+    # `language` is what the artisan picked in the app; it settles cases the
+    # script cannot, such as Marathi versus Hindi in a short Devanagari phrase.
+    facts = nlp.extract(transcript, hint=language)
     guess = infer_craft(facts, vision)
     craft = guess.craft
 
@@ -434,6 +445,7 @@ def build_listing(
         "sustainability_score": _sustainability(craft, facts),
         "palette": [c.__dict__ if hasattr(c, "__dict__") else c for c in (vision.palette if vision and vision.ok else [])],
         "language": facts.language or language,
+        "spoken_language": facts.language,
         "ai_meta": {
             "engine": "pavhan-on-device-v1",
             "craft_confidence": guess.confidence,

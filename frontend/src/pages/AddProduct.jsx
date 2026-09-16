@@ -4,9 +4,10 @@ import { useApp } from '../context/AppContext'
 import { TopBar, Toasts } from '../components/Shell'
 import { Bar, ScoreRing, Stepper, VoiceOrb, rupees } from '../components/ui'
 import useSpeechRecognition, { micDiagnostics } from '../hooks/useSpeechRecognition'
+import LanguagePicker from '../components/LanguagePicker'
 import {
   coach, createProduct, enhancePhoto, generateListing, listUsers,
-  matchBuyers, sendEnquiry, transcribeAudio,
+  matchBuyers, recommendPrice, sendEnquiry, transcribeAudio,
 } from '../api/client'
 
 /**
@@ -292,7 +293,7 @@ function PhotoReport({ vision }) {
 // ===========================================================================
 // Step 1 — speak
 // ===========================================================================
-function VoiceStep({ imageId, text, setText, onGenerated }) {
+function VoiceStep({ imageId, text, setText, spokenLang, setSpokenLang, onGenerated }) {
   const { t, lang, say, sayRaw, toast } = useApp()
   const [tips, setTips] = useState(null)
   const [generating, setGenerating] = useState(false)
@@ -303,7 +304,9 @@ function VoiceStep({ imageId, text, setText, onGenerated }) {
   const chunksRef = useRef([])
   useStepVoice('voice_record', say)
 
-  const mic = useSpeechRecognition({ lang, onFinal: (full) => setText(full) })
+  // The recogniser listens in the language the artisan chose, not the
+  // language the interface happens to be in.
+  const mic = useSpeechRecognition({ lang: spokenLang, onFinal: (full) => setText(full) })
 
   // Work out up front why the mic might not work, so the artisan is told
   // before they tap it rather than after it silently fails.
@@ -337,7 +340,7 @@ function VoiceStep({ imageId, text, setText, onGenerated }) {
         setRecording(false)
         const blob = new Blob(chunksRef.current, { type: 'audio/webm' })
         try {
-          const res = await transcribeAudio(new File([blob], 'note.webm'), lang)
+          const res = await transcribeAudio(new File([blob], 'note.webm'), spokenLang)
           setText(res.transcript)
         } catch (err) { toast(err.message, 'warn') }
       }
@@ -393,7 +396,7 @@ function VoiceStep({ imageId, text, setText, onGenerated }) {
     setGenerating(true)
     try {
       const data = await generateListing({
-        transcript: value, image_id: imageId || '', language: lang, use_llm: 'true',
+        transcript: value, image_id: imageId || '', language: spokenLang, use_llm: 'true',
       })
       onGenerated(data)
     } catch (err) {
@@ -404,7 +407,7 @@ function VoiceStep({ imageId, text, setText, onGenerated }) {
   }
 
   const pickSample = (sample) => {
-    const value = sample[lang] || sample.en
+    const value = sample[spokenLang] || sample[lang] || sample.en
     setText(value)
     mic.setText(value)
     setShowSamples(false)
@@ -424,6 +427,8 @@ function VoiceStep({ imageId, text, setText, onGenerated }) {
              'In your own language: what it is, what it is made of, how big it is, how long it took.')}
         </p>
       </div>
+
+      <LanguagePicker value={spokenLang} onChange={setSpokenLang} />
 
       <MicButton mic={mic} onToggle={toggleMic} />
 
@@ -816,9 +821,14 @@ function ReviewStep({ listing, setListing, onNext }) {
 // Step 3 — price
 // ===========================================================================
 function PriceStep({ listing, setListing, onNext }) {
-  const { t, lang, say } = useApp()
+  const { t, lang, say, toast } = useApp()
   const p = listing.pricing_meta || {}
   const [chosen, setChosen] = useState(listing.price)
+  const [costs, setCosts] = useState({
+    material: '', labour: '', other: '', margin: '',
+  })
+  const [repricing, setRepricing] = useState(false)
+  const [showCosts, setShowCosts] = useState(false)
   useStepVoice('pricing', say)
 
   const tiers = [
@@ -832,6 +842,41 @@ function PriceStep({ listing, setListing, onNext }) {
   const apply = (value) => { setChosen(value); setListing({ ...listing, price: value }) }
   const warnings = (lang === 'hi' ? p.warnings_hi : p.warnings) || p.warnings || []
   const rationale = (lang === 'hi' ? p.rationale_hi : p.rationale) || []
+
+  /** Re-price using what the artisan actually spent, not a craft-wide average. */
+  const repriceWithCosts = async () => {
+    const facts = listing.ai_meta?.transcript_facts || {}
+    setRepricing(true)
+    try {
+      const fresh = await recommendPrice({
+        craft_key: listing.craft_key,
+        craft_type: listing.craft_type,
+        complexity: listing.ai_meta?.vision?.complexity ?? 1.3,
+        making_days: facts.making_days ?? null,
+        making_hours: facts.making_hours ?? null,
+        region: listing.region || '',
+        quality_score: listing.quality_score,
+        gi_tagged: listing.gi_tagged,
+        natural_dye: !!facts.natural_dye,
+        sustainability_score: listing.sustainability_score ?? 65,
+        material_cost: costs.material === '' ? null : Number(costs.material),
+        labour_cost: costs.labour === '' ? null : Number(costs.labour),
+        other_cost: costs.other === '' ? null : Number(costs.other),
+        desired_margin_percent: costs.margin === '' ? null : Number(costs.margin),
+      })
+      setListing({
+        ...listing, pricing_meta: fresh, price: fresh.recommended,
+        price_floor: fresh.floor, price_premium: fresh.premium,
+      })
+      setChosen(fresh.recommended)
+      toast(t('आपके ख़र्च के हिसाब से दाम दोबारा निकाला।',
+              'Re-priced using your actual costs.'), 'ok')
+    } catch (err) {
+      toast(err.message, 'err')
+    } finally {
+      setRepricing(false)
+    }
+  }
 
   return (
     <div className="page stack">
@@ -849,7 +894,7 @@ function PriceStep({ listing, setListing, onNext }) {
                   style={{ flex: 1, textAlign: 'center', padding: '13px 7px',
                            borderColor: chosen === tier.value ? 'var(--madder)' : 'var(--line)',
                            borderWidth: chosen === tier.value ? 2 : 1,
-                           background: chosen === tier.value ? '#fff8f7' : '#fff' }}>
+                           background: chosen === tier.value ? 'var(--paper-2)' : 'var(--card)' }}>
             <div className="muted" style={{ fontSize: 10, fontWeight: 700,
                                             textTransform: 'uppercase' }} lang={lang}>
               {tier.label}
@@ -887,8 +932,59 @@ function PriceStep({ listing, setListing, onNext }) {
         )}
       </div>
 
+      <MarketModelCard pricing={p} />
+
+      {/* The artisan's own costs. A craft-wide average is the category's
+          price, not theirs — and the problem statement names raw material
+          cost explicitly. */}
+      <div className="card">
+        <button
+          onClick={() => setShowCosts(!showCosts)}
+          style={{ background: 'none', border: 0, padding: 0, width: '100%',
+                   textAlign: 'left', fontWeight: 700, fontSize: 13.5 }}
+          lang={lang}
+        >
+          {showCosts ? '▾' : '▸'} 🧮 {t('अपना असली ख़र्च भरिए (दाम और सटीक होगा)',
+                                         'Enter your real costs for a sharper price')}
+        </button>
+        {showCosts && (
+          <div className="fade-up" style={{ marginTop: 12 }}>
+            <div className="grid-2">
+              {[
+                ['material', t('कच्चा माल ₹', 'Raw material ₹'), t('जैसे 600', 'e.g. 600')],
+                ['labour', t('मज़दूरी ₹', 'Labour ₹'), t('जैसे 900', 'e.g. 900')],
+                ['other', t('अन्य ख़र्च ₹', 'Other costs ₹'), t('जैसे 100', 'e.g. 100')],
+                ['margin', t('मुनाफ़ा %', 'Your margin %'), t('जैसे 25', 'e.g. 25')],
+              ].map(([key, label, ph]) => (
+                <div className="field" key={key}>
+                  <label>{label}</label>
+                  <input
+                    className="input mono" inputMode="decimal" placeholder={ph}
+                    value={costs[key]}
+                    onChange={(e) => setCosts({
+                      ...costs, [key]: e.target.value.replace(/[^\d.]/g, ''),
+                    })}
+                  />
+                </div>
+              ))}
+            </div>
+            <button className="btn btn-ink btn-block" style={{ marginTop: 12 }}
+                    onClick={repriceWithCosts} disabled={repricing}>
+              {repricing ? <span className="spinner" />
+                         : t('इन ख़र्चों से दाम निकालिए', 'Re-price with these costs')}
+            </button>
+            <div className="muted" style={{ fontSize: 11, lineHeight: 1.55, marginTop: 9 }}
+                 lang={lang}>
+              {t('जो खाली छोड़ेंगे उसके लिए आपके शिल्प का औसत लिया जाएगा।',
+                 'Anything you leave blank falls back to the average for your craft.')}
+            </div>
+          </div>
+        )}
+      </div>
+
       {warnings.map((w) => (
-        <div key={w} className="card" style={{ background: '#fdf6ee', borderColor: '#e8d3b4',
+        <div key={w} className="card" style={{ background: 'var(--marigold-soft)',
+                                               borderColor: 'var(--line)',
                                                fontSize: 12.5, lineHeight: 1.6 }} lang={lang}>
           ⚠️ {w}
         </div>
@@ -939,10 +1035,6 @@ function PriceStep({ listing, setListing, onNext }) {
                    tone={c.delta_percent < 0 ? 'var(--madder)' : 'var(--leaf)'} height={5} />
             </div>
           ))}
-          <div className="muted" style={{ fontSize: 11, lineHeight: 1.55, marginTop: 8 }} lang={lang}>
-            {t('सबसे ऊपर वाली पट्टी बताती है कि आपकी मेहनत का असली मोल क्या है।',
-               'The top bar is what your work is really worth downstream.')}
-          </div>
         </div>
       )}
 
@@ -963,6 +1055,92 @@ function PriceStep({ listing, setListing, onNext }) {
       <button className="btn btn-primary btn-block" onClick={onNext} style={{ padding: 16 }}>
         {rupees(chosen)} {t('पर आगे बढ़िए', '— continue')} →
       </button>
+    </div>
+  )
+}
+
+/** The trained model's view, next to the cost-plus one. */
+function MarketModelCard({ pricing }) {
+  const { t, lang } = useApp()
+  const ml = pricing?.ml
+  const rec = pricing?.reconciliation
+  const [open, setOpen] = useState(false)
+  if (!ml) return null
+
+  return (
+    <div className="card">
+      <div className="row-between" style={{ marginBottom: 10 }}>
+        <div>
+          <div style={{ fontWeight: 700, fontSize: 13.5 }} lang={lang}>
+            🤖 {t('बाज़ार मॉडल का अनुमान', 'What the market model predicts')}
+          </div>
+          <div className="muted" style={{ fontSize: 10.5, marginTop: 2 }}>
+            {ml.model} · {t('औसत चूक', 'median error')} {ml.median_error_percent}%
+          </div>
+        </div>
+        <span className="pill leaf mono">{ml.confidence}%</span>
+      </div>
+
+      <div className="row" style={{ gap: 12, alignItems: 'flex-end' }}>
+        <div>
+          <div className="mono" style={{ fontSize: 22, fontWeight: 800 }}>{rupees(ml.price)}</div>
+          <div className="muted" style={{ fontSize: 10.5 }}>
+            {rupees(ml.low)} – {rupees(ml.high)}
+          </div>
+        </div>
+        <div className="spacer" />
+        <div style={{ textAlign: 'right' }}>
+          <div className="muted" style={{ fontSize: 10, textTransform: 'uppercase',
+                                          fontWeight: 700 }} lang={lang}>
+            {t('लागत से', 'from costs')}
+          </div>
+          <div className="mono" style={{ fontSize: 15, fontWeight: 700 }}>
+            {rupees(pricing.recommended)}
+          </div>
+        </div>
+      </div>
+
+      {rec && (
+        <div style={{ marginTop: 11, padding: '9px 11px', borderRadius: 10,
+                      background: rec.source === 'blended' ? 'var(--leaf-soft)' : 'var(--marigold-soft)',
+                      fontSize: 11.5, lineHeight: 1.6 }} lang={lang}>
+          {lang === 'hi' ? rec.note_hi : rec.note}
+        </div>
+      )}
+
+      {ml.drivers?.length > 0 && (
+        <>
+          <button onClick={() => setOpen(!open)} className="btn btn-sm"
+                  style={{ background: 'none', padding: '9px 0 0', fontSize: 12,
+                           color: 'var(--indigo)', fontWeight: 700 }} lang={lang}>
+            {open ? '▾' : '▸'} {t('इस दाम को किसने बढ़ाया-घटाया', 'What moved this price')}
+          </button>
+          {open && (
+            <div className="fade-up" style={{ marginTop: 8 }}>
+              {ml.drivers.map((d) => (
+                <div key={d.feature} style={{ marginBottom: 8 }}>
+                  <div className="row-between" style={{ fontSize: 11.5, marginBottom: 3 }}>
+                    <span style={{ fontWeight: 600 }} lang={lang}>
+                      {lang === 'hi' ? d.label_hi : d.label}
+                    </span>
+                    <span className="mono" style={{ fontWeight: 700,
+                          color: d.direction === 'up' ? 'var(--leaf)' : 'var(--madder)' }}>
+                      {d.direction === 'up' ? '+' : '−'}{rupees(Math.abs(d.delta))}
+                    </span>
+                  </div>
+                  <Bar value={Math.min(100, Math.abs(d.percent))}
+                       tone={d.direction === 'up' ? 'var(--leaf)' : 'var(--madder)'} height={4} />
+                </div>
+              ))}
+              <div className="muted" style={{ fontSize: 10.5, lineHeight: 1.55, marginTop: 8 }}
+                   lang={lang}>
+                {t('यह इसी कृति के लिए है — हर सामान के लिए अलग होता है।',
+                   'Measured for this piece specifically, not a generic chart.')}
+              </div>
+            </div>
+          )}
+        </>
+      )}
     </div>
   )
 }
@@ -1257,7 +1435,7 @@ export function BuyerMatchCard({ match, sent, onEnquire }) {
 // ===========================================================================
 export default function AddProduct() {
   const navigate = useNavigate()
-  const { t, toast } = useApp()
+  const { t, lang, sayRaw, toast } = useApp()
   const [step, setStep] = useState(0)
 
   const [imageId, setImageId] = useState(null)
@@ -1267,11 +1445,11 @@ export default function AddProduct() {
   const [vision, setVision] = useState(null)
   const [analysing, setAnalysing] = useState(false)
   const [transcript, setTranscript] = useState('')
+  // Separate from the interface language on purpose — see LanguagePicker.
+  const [spokenLang, setSpokenLang] = useState(lang)
   const [listing, setListing] = useState(null)
   const [saved, setSaved] = useState(null)
   const [matches, setMatches] = useState(null)
-
-  const { lang, sayRaw } = useApp()
 
   const steps = [
     t('फोटो', 'Photo'), t('बोलिए', 'Speak'), t('जाँचिए', 'Review'),
@@ -1335,6 +1513,7 @@ export default function AddProduct() {
         )}
         {step === 1 && (
           <VoiceStep imageId={imageId} text={transcript} setText={setTranscript}
+                     spokenLang={spokenLang} setSpokenLang={setSpokenLang}
                      onGenerated={(data) => { setListing(data); goto(2) }} />
         )}
         {step === 2 && listing && (

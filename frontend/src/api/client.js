@@ -96,6 +96,19 @@ export const voiceWelcome = (role, lang) => api.get('/api/voice/welcome', { role
 export const voiceScripts = (lang) => api.get('/api/voice/scripts', { lang })
 export const voiceRoles = (lang) => api.get('/api/voice/roles', { lang })
 export const voiceLabels = (lang) => api.get('/api/voice/labels', { lang })
+export const voiceLanguages = () => api.get('/api/voice/languages')
+
+// --- pricing model -------------------------------------------------------
+export const priceModelCard = () => api.get('/api/pricing/model')
+
+// --- government e-marketplace -------------------------------------------
+export const exportFormats = () => api.get('/api/export/formats')
+export const exportReadiness = (id) => api.get(`/api/export/readiness/${id}`)
+export const exportPackage = (id, format = 'json') =>
+  api.get(`/api/export/${id}`, { format })
+export const exportDownloadUrl = (id, format) =>
+  `/api/export/${id}?format=${format}&download=true`
+export const bulkCatalogueUrl = (artisanId) => `/api/export/bulk/artisan/${artisanId}`
 
 // --- AI Product Studio ---------------------------------------------------
 export const studioStatus = () => api.get('/api/studio/status')

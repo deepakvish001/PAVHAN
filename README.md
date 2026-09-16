@@ -18,10 +18,11 @@ a ranked list of real buyers with a message already written to each one.
 | Step | What the artisan does | What PAVHAN does |
 |---|---|---|
 | 1 | Photographs the piece | **AI Product Studio**: removes the cluttered background, corrects the colour cast and exposure, sharpens the detail and crops to a 1600×1600 e-commerce master — with a real before/after |
-| 2 | Speaks in Hindi, Hinglish or English | Extracts material, colour, size, weight, days of work, origin and care from the actual sentence — and asks for what is missing |
+| 2 | Speaks in **any of 12 Indian languages** | Extracts material, colour, size, weight, days of work, origin and care from the actual sentence — and asks for what is missing. The listing always comes out in English **and** Hindi |
 | 3 | Checks the draft | A written listing, story, tags and SEO keywords — nothing invented that was not said or seen |
-| 4 | Sees the price | Floor / recommended / premium, with a breakdown they can show to any buyer, plus what a middleman, a bazaar stall, a boutique and an export house would each pay |
+| 4 | Sees the price, and enters what they spent | **Two engines side by side**: a cost-plus calculation they can show to any buyer, and a trained gradient-boosting model that says what the market pays for pieces like this — each explaining itself, and the disagreement between them reported rather than averaged away |
 | 5 | Picks buyers | 12 buyer profiles scored on 7 weighted signals, each explaining itself, with quantity, unit price and a ready pitch |
+| 6 | Sends it to a government portal | GeM and ONDC packages with HSN classification and the statutory declarations already filled, plus a readiness check naming anything still missing |
 
 A voice guide speaks every screen out loud, in Hindi, from the first second the
 app opens — because an artisan listing a product for the first time needs
@@ -48,7 +49,9 @@ prints:
 ```
 
 One process, one port, everything served together. Open it in **Chrome or
-Edge**.
+Edge**, and use the install prompt in Profile to put it on the home screen —
+it then opens without an internet connection and keeps showing the artisan's
+saved work.
 
 > ### Use the `localhost` address exactly as printed
 >
@@ -71,7 +74,7 @@ Other modes:
 ```bash
 ./run.sh dev        # two ports with hot reload: API :8000, app :5173
 ./run.sh backend    # API only
-./run.sh test       # 62-check API smoke test against a running server
+./run.sh test       # 87-check API smoke test against a running server
 ```
 
 ### Optional: connect Claude
@@ -158,6 +161,70 @@ fills the frame, or one shot against a cloth of its own shade, is left alone
 with an explanation — "shoot against a plain white cloth" — instead of being
 silently mangled.
 
+### The twelve languages
+
+An artisan speaks; the listing comes out in English and Hindi. Input is
+accepted in **Hindi, English, Marathi, Bengali, Assamese, Tamil, Telugu,
+Kannada, Malayalam, Gujarati, Punjabi and Odia**, in either the native script
+or romanised.
+
+Detection reads the Unicode block first, which is unambiguous — Tamil text can
+only be Tamil. Where a script carries two languages (Devanagari holds Hindi and
+Marathi; Bengali holds Bengali and Assamese) a small set of everyday marker
+words separates them, and the language the artisan picked in the app settles
+anything still ambiguous.
+
+The language is also evidence about the craft. "Silk saree" spoken in Tamil
+means Kanjeevaram, not Banarasi, and `LANGUAGE_AFFINITY` encodes that — which
+is why the taxonomy now carries Kanjeevaram, Pochampally, Bandhani,
+Sambalpuri, Muga and Kasuti alongside the northern crafts.
+
+### The pricing model
+
+The problem statement asks for a machine-learning algorithm, and there is one:
+a `GradientBoostingRegressor` trained on log-price, scoring **R² 0.979 with a
+median error of 8.2%** and 89% of held-out pieces within 20%.
+
+There is no public dataset of what Indian artisan craft actually sells for —
+that information asymmetry is the problem this project exists to fix. So the
+model is trained on a simulated market whose data-generating process is written
+down in full in `app/ml/dataset.py` rather than scraped from somewhere
+unverifiable. The simulation deliberately contains effects the rules engine
+does **not** model, and those are what the model has to learn: diminishing
+returns on labour, category-specific price elasticity, an interaction between
+GI status and export demand, threshold effects on listing quality, and seasons
+that peak differently by category.
+
+Both engines are shown to the artisan, because they answer different questions:
+
+* the **cost-plus engine** answers *"what is this worth, and here is the
+  arithmetic"* — which is what you show a trader at your door;
+* the **model** answers *"what does this market pay for pieces like this"* —
+  which is what makes a listing sell.
+
+When they disagree by more than 18% that is reported, not averaged away: a wide
+gap usually means an unusual input, and the recommendation stays anchored to
+the artisan's costs so they cannot end up below them. Each model prediction
+also carries a **local** explanation — every feature is pushed back to a
+typical value and the model re-queried, so "GI certification +₹6,714" is
+measured for that specific piece rather than read off a global chart.
+
+Retrain at any time with `python -m app.ml.train`.
+
+### Government e-marketplaces
+
+`/api/export/{id}` produces a submission-shaped package for **GeM** and
+**ONDC**: correct HSN classification (the commonest reason an artisan listing
+is rejected, and not something they can reasonably be expected to know), the
+Legal Metrology statutory declarations, country-of-origin, and a readiness
+report naming every field a portal would bounce it for.
+
+What it does **not** do is claim an integration that does not exist. The final
+push needs a registered seller account and API credentials, which are granted
+to an organisation rather than issued to an application — and the app says so
+on the screen. Everything up to that point, which is the part an artisan could
+never do alone, is done.
+
 ### How the price is built
 
 ```
@@ -233,6 +300,10 @@ Full interactive documentation at `/docs`. The endpoints that matter:
 | `POST /api/auth/request-otp` · `verify-otp` | Mobile sign-in |
 | `GET /api/voice/scripts` | Every screen's guide copy |
 | `GET /api/voice/labels` | Hindi names for craft types, categories, materials, regions |
+| `GET /api/voice/languages` | The 12 input languages, with speech and TTS locales |
+| `GET /api/pricing/model` | The model card: algorithm, measured accuracy, feature importance |
+| `GET /api/export/{id}?format=gem\|ondc\|csv` | Government marketplace package |
+| `GET /api/export/readiness/{id}` | What is still missing before submission |
 | `GET /api/artisans/{id}/dashboard` | Earnings, pipeline, uplift vs middleman |
 
 ---
@@ -243,7 +314,7 @@ Full interactive documentation at `/docs`. The endpoints that matter:
 ./run.sh test
 ```
 
-62 checks covering the claims this project actually makes: two different photos
+87 checks covering the claims this project actually makes: two different photos
 must read differently, two different voice notes must produce different crafts
 and different prices, a Hindi query and an English query must find the same
 listing, every engine explanation must exist in both languages, and different
@@ -254,7 +325,8 @@ products must match different buyers.
 ## Tech
 
 React 18 · Vite 5 · React Router 6 · FastAPI · SQLAlchemy 2 · Pydantic 2 ·
-Pillow · OpenCV · NumPy · SQLite · Web Speech API · optional Claude API
+Pillow · OpenCV · NumPy · scikit-learn · SQLite · Web Speech API ·
+service worker + web app manifest · optional Claude API
 
 No CSS framework and no component library — the interface is built from a small
 design system in `frontend/src/styles/theme.css` drawn from the crafts

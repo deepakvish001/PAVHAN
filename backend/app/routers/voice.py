@@ -5,6 +5,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Query
 
 from ..services import voice_scripts as vs
+from ..services.languages import language_list
 from ..services.taxonomy import label_pack
 
 router = APIRouter(prefix="/api/voice", tags=["voice"])
@@ -46,6 +47,22 @@ def all_scripts(lang: str = "hi") -> dict:
         "welcome": {role: vs.welcome(role, lang) for role in vs.WELCOME},
         "screens": {k: v.get(lang, v.get("en", "")) for k, v in vs.SCREENS.items()},
         "tips": {role: vs.tips(role, lang) for role in vs.TIPS},
+    }
+
+
+@router.get("/languages")
+def languages() -> dict:
+    """Every language an artisan may speak into the cataloguer.
+
+    The app uses `speech_locale` for the browser's recogniser and `tts_locale`
+    for the guide's voice. Listings always come out in English and Hindi
+    regardless of which of these went in.
+    """
+    return {
+        "languages": language_list(),
+        "output_languages": ["en", "hi"],
+        "note": "Speak in any of these; the listing is written in English and Hindi.",
+        "note_hi": "इनमें से किसी भी भाषा में बोलिए; विवरण अंग्रेज़ी और हिंदी दोनों में बनेगा।",
     }
 
 

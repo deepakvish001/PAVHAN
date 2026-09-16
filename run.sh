@@ -31,6 +31,13 @@ setup_backend() {
   echo "→ Installing Python packages…"
   python -m pip install -q --upgrade pip
   python -m pip install -q -r requirements.txt
+
+  # The pricing model is a build artifact rather than a committed binary, so
+  # it is trained once on first run. Takes about fifteen seconds.
+  if [ ! -f app/ml/price_model.joblib ]; then
+    echo "→ Training the pricing model (first run only, ~15s)…"
+    python -m app.ml.train >/dev/null
+  fi
 }
 
 build_frontend() {

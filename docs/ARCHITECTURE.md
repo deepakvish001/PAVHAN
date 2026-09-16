@@ -151,6 +151,43 @@ final score so a document matching every query term outranks one that matched a
 single common term many times. Facets are computed from live data, so adding a
 craft cluster needs no UI change.
 
+## Training a model with no dataset to train on
+
+The honest problem: nobody publishes what Indian artisan craft sells for. The
+absence of that number is the whole reason a weaver accepts ₹14,000 for a
+₹35,000 saree. So a scraped dataset was not an option, and inventing one
+quietly would have been worse.
+
+What `app/ml/dataset.py` does instead is write the market model down. Every
+effect is stated and auditable: how labour saturates, how each category's
+ceiling compresses the top end, how a GI tag is worth more where export demand
+already exists, how presentation is a threshold rather than a slope, how
+textiles and decor peak in different months. A reviewer can disagree with a
+coefficient and change it; they cannot be misled about where the number came
+from.
+
+The important design constraint was that the simulation must **not** be the
+rules engine with noise added. If it were, the model would only rediscover the
+rules and add nothing. Every effect listed above is one the rules engine does
+not express, which is why the two engines disagree on unusual inputs — and
+that disagreement is information worth showing rather than a bug to smooth
+over.
+
+Training on `log1p(price)` rather than price matters more than it looks. Craft
+prices span three orders of magnitude; optimising raw rupee error would let
+the model ignore everything under a few thousand rupees, which is most of what
+a bamboo weaver makes. In log space the model optimises proportional error,
+which is what "10% off" means to the person being paid.
+
+## Local explanations, not a global chart
+
+Feature importance says the same thing for every product, which is useless to
+the artisan looking at one piece. `pricing_ml._explain` pushes each feature
+back to a typical value one at a time and re-queries the model, so the number
+on screen — "GI certification +₹6,714" — is that feature's contribution for
+*this* piece. It costs fourteen extra predictions and turns a model into an
+explanation.
+
 ## Things a reviewer should know are deliberate
 
 - **SQLite, not Postgres.** One file, no service to start, trivially resettable
@@ -164,6 +201,20 @@ craft cluster needs no UI change.
 - **Uploaded images are kept in a process-level cache plus disk.** Fine for a
   single-process demo; a multi-worker deployment needs object storage. The cache
   is confined to `routers/ai.py`.
-- **No authentication.** The demo opens into a seeded artisan account so the
-  dashboard has data from second one. Auth is the obvious next commit, not an
-  oversight.
+- **Mobile-number sign-in has no SMS gateway.** The OTP is returned in the
+  response and labelled on screen as a demo affordance. Wiring a provider is
+  one function, `auth._deliver`. Pretending an SMS had been sent would have
+  been the dishonest choice.
+- **Government marketplace submission stops before the push.** Field mapping,
+  HSN classification and the statutory declarations are complete; the POST
+  needs a seller account granted to an organisation. The app states this
+  rather than implying an integration.
+- **The regional vocabulary is narrow on purpose.** Ten languages times a full
+  dictionary would be unmaintainable and mostly unused. Ten languages times
+  "the forty words that appear in a product description" is small, auditable
+  and sufficient — and Indic scripts never collide, so the tables merge into
+  one flat lookup with no ambiguity.
+- **The service worker never caches writes.** A queued POST replaying later
+  would publish a listing the artisan believed had failed. Reads fall back to
+  the last good response and are tagged so the app can say "saved data"
+  instead of presenting a stale price as live.

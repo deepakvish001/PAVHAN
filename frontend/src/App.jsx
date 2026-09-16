@@ -14,6 +14,7 @@ import B2BHome from './pages/B2BHome'
 import Profile from './pages/Profile'
 import Login from './pages/Login'
 import Assistant from './pages/Assistant'
+import MarketplaceExport from './pages/MarketplaceExport'
 
 /** Screens behind the role gate — visiting them without a role sends you to
  *  the front door, which is where the app asks who you are. */
@@ -49,6 +50,7 @@ export default function App() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/login" element={<Login />} />
           <Route path="/assistant" element={<Assistant />} />
+          <Route path="/export/:id" element={<MarketplaceExport />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>

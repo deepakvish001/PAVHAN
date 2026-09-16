@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import useVoiceAssistant from '../hooks/useVoiceAssistant'
+import usePwa from '../hooks/usePwa'
 import { voiceLabels, voiceScripts } from '../api/client'
 
 const AppContext = createContext(null)
@@ -26,6 +27,7 @@ export function AppProvider({ children }) {
   const toastId = useRef(0)
 
   const assistant = useVoiceAssistant({ lang, enabled: voiceOn })
+  const pwa = usePwa()
 
   useEffect(() => {
     try {
@@ -177,12 +179,13 @@ export function AppProvider({ children }) {
     user, setUser,
     scripts,
     labels, L,
+    pwa,
     assistant,
     say, sayRaw, sayProtected, cancelUnlessProtected,
     toast, toasts,
     t: (hi, en) => (lang === 'hi' ? hi : en),
   }), [role, lang, voiceOn, user, theme, token, toggleTheme, scripts, labels, L,
-       assistant, say, sayRaw, sayProtected, cancelUnlessProtected, toast, toasts])
+       pwa, assistant, say, sayRaw, sayProtected, cancelUnlessProtected, toast, toasts])
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>
 }

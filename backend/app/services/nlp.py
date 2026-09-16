@@ -14,6 +14,8 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 
+from . import vocab_regional as regional
+from .languages import detect as detect_script_language
 from .taxonomy import CRAFTS, Craft
 
 # ---------------------------------------------------------------------------
@@ -103,6 +105,13 @@ REGION_WORDS: dict[str, str] = {
     "jodhpur": "Jodhpur", "udaipur": "Udaipur", "agra": "Agra", "delhi": "Delhi",
     "gujarat": "Gujarat", "rajasthan": "Rajasthan", "राजस्थान": "Rajasthan",
 }
+
+# Regional languages fold straight into the existing tables: the canonical
+# values are identical, so nothing downstream has to know which language the
+# artisan spoke. Indic scripts never collide, so a single flat lookup is safe.
+COLOUR_WORDS.update(regional.all_values(regional.COLOURS))
+MATERIAL_WORDS.update(regional.all_values(regional.MATERIALS))
+TECHNIQUE_WORDS.update(regional.all_values(regional.TECHNIQUES))
 
 CARE_PATTERNS: list[tuple[str, str]] = [
     (r"dry\s*clean", "Dry clean only"),
@@ -201,17 +210,69 @@ PRODUCT_NOUNS = {
 }
 
 
-def detect_language(text: str) -> str:
-    devanagari = len(re.findall(r"[ऀ-ॿ]", text))
-    latin = len(re.findall(r"[A-Za-z]", text))
-    if devanagari > latin * 0.5:
-        return "hi"
-    hinglish_markers = ("hai", "hain", "humne", "hamne", "isme", "iska", "banaya",
-                        "karte", "lagta", "yeh", "ye ", "aur ")
-    low = text.lower()
-    if any(m in low for m in hinglish_markers):
-        return "hi"
-    return "en"
+@dataclass
+class TranscriptFacts:
+    """Only what the artisan actually said."""
+
+    raw: str = ""
+    language: str = "hi"
+    colours: list[str] = field(default_factory=list)
+    materials: list[str] = field(default_factory=list)
+    techniques: list[str] = field(default_factory=list)
+    regions: list[str] = field(default_factory=list)
+    craft_scores: dict[str, float] = field(default_factory=dict)
+    size: str | None = None
+    weight: str | None = None
+    quantity: int | None = None
+    making_days: float | None = None
+    making_hours: float | None = None
+    expected_price: float | None = None
+    care: list[str] = field(default_factory=list)
+    product_noun: str | None = None
+    mentions_handmade: bool = False
+    mentions_natural_dye: bool = False
+    word_count: int = 0
+    completeness: int = 0
+    missing_fields: list[str] = field(default_factory=list)
+
+
+PRODUCT_NOUNS = {
+    "saree": "Saree", "sari": "Saree", "sadi": "Saree", "साड़ी": "Saree",
+    "dupatta": "Dupatta", "दुपट्टा": "Dupatta", "stole": "Stole", "scarf": "Scarf",
+    "shawl": "Shawl", "shaal": "Shawl", "शॉल": "Shawl",
+    "kurta": "Kurta", "कुर्ता": "Kurta", "kurti": "Kurti", "suit": "Suit Set",
+    "painting": "Painting", "चित्र": "Painting", "पेंटिंग": "Painting", "art": "Artwork",
+    "vase": "Vase", "गुलदस्ता": "Vase", "pot": "Pot", "matka": "Pot", "मटका": "Pot",
+    "bowl": "Bowl", "katori": "Bowl", "कटोरी": "Bowl", "plate": "Plate", "थाली": "Plate",
+    "diya": "Diya", "दीया": "Diya", "lamp": "Lamp", "लैंप": "Lamp",
+    "toy": "Toy", "khilona": "Toy", "खिलौना": "Toy",
+    "basket": "Basket", "tokri": "Basket", "टोकरी": "Basket",
+    "bag": "Bag", "thaila": "Bag", "थैला": "Bag", "jhola": "Bag",
+    "earring": "Earrings", "jhumka": "Jhumka", "झुमका": "Jhumka",
+    "necklace": "Necklace", "haar": "Necklace", "हार": "Necklace",
+    "bangle": "Bangles", "chudi": "Bangles", "चूड़ी": "Bangles",
+    "idol": "Idol", "murti": "Idol", "मूर्ति": "Idol", "figurine": "Figurine",
+    "quilt": "Quilt", "razai": "Quilt", "रज़ाई": "Quilt", "throw": "Throw",
+    "cushion": "Cushion Cover", "runner": "Table Runner", "rug": "Rug", "carpet": "Carpet",
+    "box": "Storage Box", "dabba": "Storage Box", "डिब्बा": "Storage Box",
+    "mask": "Mask", "मुखौटा": "Mask", "wall hanging": "Wall Hanging",
+}
+
+
+PRODUCT_NOUNS.update(regional.all_values(regional.NOUNS))
+HINDI_NUMBERS.update(regional.all_values(regional.NUMBERS))
+for _native, _english in regional.all_values(regional.UNITS).items():
+    UNIT_MAP[_native] = {"day": "day", "hour": "hour"}.get(_english, _english)
+
+
+def detect_language(text: str, hint: str | None = None) -> str:
+    """Which of the supported languages this transcript is in.
+
+    Delegates to the script detector, which reads Unicode blocks first and
+    only falls back to marker words for romanised input or for the two scripts
+    that carry more than one language.
+    """
+    return detect_script_language(text, hint=hint)
 
 
 def _find_vocab(text: str, vocab: dict[str, str]) -> list[str]:
@@ -272,7 +333,12 @@ def extract_size(text: str) -> str | None:
     if m:
         unit = UNIT_MAP.get((m.group(3) or "inch").lower(), "inch")
         return f"{m.group(1)} x {m.group(2)} {unit}"
-    hit = _number_before(text, r"metre|meter|mtr|मीटर|inch|inches|इंच|cm|feet|foot|ft|फुट")
+    length_words = "|".join(
+        [r"metre", r"meter", r"mtr", "मीटर", r"inch", r"inches", "इंच", r"cm",
+         r"feet", r"foot", r"ft", "फुट"]
+        + [w for w, e in regional.all_values(regional.UNITS).items()
+           if e in ("metre", "inch", "feet", "cm")])
+    hit = _number_before(text, length_words)
     if hit:
         value, unit = hit
         pretty = UNIT_MAP.get(unit, unit)
@@ -282,7 +348,10 @@ def extract_size(text: str) -> str | None:
 
 
 def extract_weight(text: str) -> str | None:
-    hit = _number_before(text, r"gram|gm|grams|ग्राम|kg|kilo|kilogram|किलो")
+    weight_words = "|".join(
+        [r"gram", r"gm", r"grams", "ग्राम", r"kg", r"kilo", r"kilogram", "किलो"]
+        + [w for w, e in regional.all_values(regional.UNITS).items() if e in ("gram", "kg")])
+    hit = _number_before(text, weight_words)
     if hit:
         value, unit = hit
         pretty = UNIT_MAP.get(unit, unit)
@@ -293,10 +362,16 @@ def extract_weight(text: str) -> str | None:
 def extract_making_time(text: str) -> tuple[float | None, float | None]:
     """Returns (days, hours). Labour time is the single biggest price driver."""
     days = hours = None
-    hit = _number_before(text, r"din|days|day|दिन")
+    day_words = "|".join(
+        [r"din", r"days", r"day", "दिन"]
+        + [w for w, e in regional.all_values(regional.UNITS).items() if e == "day"])
+    hit = _number_before(text, day_words)
     if hit:
         days = hit[0]
-    hit = _number_before(text, r"ghante|ghanta|hours|hour|hrs|घंटे|घंटा")
+    hour_words = "|".join(
+        [r"ghante", r"ghanta", r"hours", r"hour", r"hrs", "घंटे", "घंटा"]
+        + [w for w, e in regional.all_values(regional.UNITS).items() if e == "hour"])
+    hit = _number_before(text, hour_words)
     if hit:
         hours = hit[0]
     hit = _number_before(text, r"hafte|hafta|weeks|week|सप्ताह|हफ़्ते|हफ्ते")
@@ -347,14 +422,19 @@ def score_crafts(text: str) -> dict[str, float]:
     return scores
 
 
-def extract(text: str) -> TranscriptFacts:
+def extract(text: str, hint: str | None = None) -> TranscriptFacts:
+    """Pull the facts out of whatever language the artisan spoke.
+
+    `hint` is the language they picked in the app; it settles cases the script
+    alone cannot, such as Marathi versus Hindi in a short Devanagari phrase.
+    """
     text = (text or "").strip()
     facts = TranscriptFacts(raw=text, word_count=len(text.split()))
     if not text:
         facts.missing_fields = ["description", "material", "colour", "size", "making time"]
         return facts
 
-    facts.language = detect_language(text)
+    facts.language = detect_language(text, hint)
     facts.colours = _find_vocab(text, COLOUR_WORDS)
     facts.materials = _find_vocab(text, MATERIAL_WORDS)
     facts.techniques = _find_vocab(text, TECHNIQUE_WORDS)

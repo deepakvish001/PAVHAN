@@ -36,8 +36,8 @@ somebody talking them through it, not a tooltip.
 ## Running it
 
 ```bash
-git clone https://github.com/deepakvish001/sih26060.git
-cd sih26060
+git clone https://github.com/deepakvish001/PAVHAN.git
+cd PAVHAN
 ./run.sh                 # macOS / Linux / Git Bash
 ```
 

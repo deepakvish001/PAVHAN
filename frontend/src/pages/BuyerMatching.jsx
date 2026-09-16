@@ -98,10 +98,10 @@ export default function BuyerMatching() {
                     >
                       <ProductImage product={p} height={72} radius={0} style={{ width: '100%' }} />
                       <div style={{ padding: '7px 8px 9px' }}>
-                        <div style={{ fontSize: 10.5, fontWeight: 700, lineHeight: 1.35, minHeight: 28 }}>
+                        <div style={{ fontSize: 'calc(10.5px * var(--font-scale))', fontWeight: 700, lineHeight: 1.35, minHeight: 28 }}>
                           {p.title.length > 30 ? `${p.title.slice(0, 28)}…` : p.title}
                         </div>
-                        <div className="mono muted" style={{ fontSize: 10, marginTop: 3 }}>
+                        <div className="mono muted" style={{ fontSize: 'calc(10px * var(--font-scale))', marginTop: 3 }}>
                           {rupees(p.price)}
                         </div>
                       </div>
@@ -121,8 +121,8 @@ export default function BuyerMatching() {
                       [rupees(data.summary.total_opportunity), t('कुल मौका', 'opportunity')],
                     ].map(([n, label]) => (
                       <div key={label} style={{ flex: 1 }}>
-                        <div className="mono" style={{ fontSize: 15, fontWeight: 800 }}>{n}</div>
-                        <div className="muted" style={{ fontSize: 9, textTransform: 'uppercase', lineHeight: 1.3 }}>
+                        <div className="mono" style={{ fontSize: 'calc(15px * var(--font-scale))', fontWeight: 800 }}>{n}</div>
+                        <div className="muted" style={{ fontSize: 'calc(9px * var(--font-scale))', textTransform: 'uppercase', lineHeight: 1.3 }}>
                           {label}
                         </div>
                       </div>
@@ -131,14 +131,14 @@ export default function BuyerMatching() {
 
                   {data.categories?.length > 0 && (
                     <div className="card">
-                      <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 9 }} lang={lang}>
+                      <div style={{ fontWeight: 700, fontSize: 'calc(13px * var(--font-scale))', marginBottom: 9 }} lang={lang}>
                         {t('खरीदारों की श्रेणियाँ', 'Buyer categories')}
                       </div>
                       {data.categories.map((g) => (
                         <div
                           key={g.category}
                           className="row-between"
-                          style={{ fontSize: 12.5, padding: '7px 0', borderTop: '1px solid var(--line)' }}
+                          style={{ fontSize: 'calc(12.5px * var(--font-scale))', padding: '7px 0', borderTop: '1px solid var(--line)' }}
                         >
                           <span style={{ fontWeight: 600 }}>{g.category}</span>
                           <span className="row" style={{ gap: 7 }}>

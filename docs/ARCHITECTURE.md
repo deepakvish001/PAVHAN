@@ -188,6 +188,89 @@ on screen — "GI certification +₹6,714" — is that feature's contribution fo
 *this* piece. It costs fourteen extra predictions and turns a model into an
 explanation.
 
+## Making a ministry statistic you could defend in a review meeting
+
+The impact report was the first feature where being *wrong* was worse than
+being absent. Its first run produced a mean uplift of **2,653%** and a monthly
+income of ₹1.79 lakh for a rural artisan. Both were arithmetically correct and
+completely fake, and a panel would have stopped reading there.
+
+Three defects, all of the same shape — a number divided by the wrong
+denominator:
+
+1. **Tenure came from `User.created_at`.** Seeded and imported artisans are
+   created *now* while their order history spans months, so a year of sales was
+   being divided by a two-week-old account. Fixed by taking the earliest of the
+   account, its first listing and its first order:
+
+   ```python
+   candidates = [_aware(artisan.created_at)]
+   candidates += [_aware(p.created_at) for p in products]
+   candidates += [_aware(o.created_at) for o in orders]
+   started = min((c for c in candidates if c), default=now)
+   ```
+
+2. **A single mis-stated baseline dominated the mean.** An artisan who declares
+   ₹300/month produces a four-figure uplift percentage that swamps every honest
+   row. `IMPLAUSIBLE_UPLIFT = 400.0` excludes those from the published average,
+   and the response reports `uplift_sample_size`,
+   `uplift_excluded_implausible` and `uplift_excluded` so the exclusion is
+   visible rather than quiet.
+
+3. **The headline and the breakdown disagreed.** The exclusion was applied when
+   computing the ministry headline but not when grouping by corporation, so the
+   page showed a mean of +83.5% above a corporation row reading +486.2%. A
+   report that contradicts itself on the same screen is worse than no report.
+   The filter now runs once, before both.
+
+Artisans with negative outcomes are kept in the table. The demo report shows
+two (−3% and −60.1%) and that is the point: a tool that only ever reports
+success is not measuring anything.
+
+## Why a fair needs a QR and not a listing
+
+Fair mode looks like a small feature and is the one that maps most directly
+onto the problem statement's diagnosis — "a temporary boost in sales" versus
+"continuous, year-round access". The mechanism is deliberately minimal: a code,
+a printed square, a storefront, a follow button.
+
+The QR is **SVG, not PNG**, because it is printed on A4 and taped to a stall
+frame, and a raster QR scaled to the wrong size is a QR that will not scan. It
+uses `ERROR_CORRECT_H` because that sheet will be creased and partly obscured
+by whatever is hanging in front of it. Dark modules are emitted as run-length
+`<rect>` runs rather than one per module, which keeps the SVG small enough to
+inline in a JSON response. Stall codes omit `0`/`O` and `1`/`I`/`L`, because
+sometimes a visitor types the code by hand when a camera will not focus.
+
+The measurement is the reason the feature exists: `stall/{code}/performance`
+splits sales into during-fair and after-fair. Two fairs with identical takings
+on the day are not the same fair, and nothing before this could tell them
+apart.
+
+## Requirements, quotes and orders share the pricing engine's numbers
+
+The buyer matcher answers "who wants what I already made". A requirement board
+answers the other direction, and the ranking reuses the same scoring rather
+than a second, subtly different one — an artisan who sees two screens disagree
+about which buyers suit them stops trusting both.
+
+The quote sheet shows unit price × quantity, the pricing engine's cost, and the
+resulting margin, because the failure mode for a first bulk order is accepting
+it at a loss because the total looked large. Accepting a quote writes an
+`Order` — the same rows the impact report counts, which is what makes those
+figures transaction-derived instead of declared.
+
+## Test isolation
+
+The suite publishes listings, sends quotes and advances orders, so it mutates
+the state it asserts against. It passed once and failed on the second run — the
+worst kind of test, because the failure looks like a regression in whatever you
+touched most recently. Two fixes: `main()` calls `POST /api/admin/reseed`
+before anything else, and the sign-in check uses a random phone number per run
+so "a new user is sent to onboarding" stays true. 118 checks now pass twice in
+a row against the same running server, which is the property that actually
+matters the morning of a demo.
+
 ## Things a reviewer should know are deliberate
 
 - **SQLite, not Postgres.** One file, no service to start, trivially resettable
@@ -214,6 +297,18 @@ explanation.
   "the forty words that appear in a product description" is small, auditable
   and sufficient — and Indic scripts never collide, so the tables merge into
   one flat lookup with no ambiguity.
+- **Accessibility is a scale factor, not a second stylesheet.** The in-app
+  text-size control sets one `--font-scale` custom property on the root. The
+  first version scaled only `html { font-size }`, which is the usual advice and
+  was wrong here: this interface declares most of its type in explicit pixels,
+  and a pixel does not care what the root font-size is — body copy grew while
+  every button, label, chip and nav item stayed exactly where it was, so the
+  control looked like it half-worked. Every declared size now carries the
+  multiplier itself, `calc(Npx * var(--font-scale))`, in `theme.css` and in all
+  329 inline sizes across the screens. Measured in a browser at 145%: root
+  16→23.2px, buttons 15→21.75px, section titles 18→26.1px, with no horizontal
+  overflow at 412px wide. High contrast is a `data-contrast` attribute that
+  redefines the palette tokens, for the same reason — one switch, whole theme.
 - **The service worker never caches writes.** A queued POST replaying later
   would publish a listing the artisan believed had failed. Reads fall back to
   the last good response and are tagged so the app can say "saved data"

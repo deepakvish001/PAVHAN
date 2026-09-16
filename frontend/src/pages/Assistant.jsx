@@ -101,13 +101,13 @@ export default function Assistant() {
                   color: m.who === 'me' ? '#fff' : 'var(--ink)',
                   border: m.who === 'me' ? 'none' : '1px solid var(--line)',
                   borderRadius: m.who === 'me' ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
-                  padding: '12px 14px', fontSize: 13.5, lineHeight: 1.7,
+                  padding: '12px 14px', fontSize: 'calc(13.5px * var(--font-scale))', lineHeight: 1.7,
                   boxShadow: 'var(--shadow-1)',
                 }}
                 lang={lang}
               >
                 {m.who === 'bot' && (
-                  <div style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--madder)',
+                  <div style={{ fontSize: 'calc(10.5px * var(--font-scale))', fontWeight: 700, color: 'var(--madder)',
                                 marginBottom: 5, letterSpacing: '0.04em' }}>
                     🪡 PAVHAN
                   </div>
@@ -152,7 +152,7 @@ export default function Assistant() {
           }}
         >
           {mic.listening && (
-            <div className="center muted" style={{ fontSize: 11.5, marginBottom: 7 }} lang={lang}>
+            <div className="center muted" style={{ fontSize: 'calc(11.5px * var(--font-scale))', marginBottom: 7 }} lang={lang}>
               {mic.interim || t('सुन रहा हूँ…', 'Listening…')}
             </div>
           )}
@@ -172,7 +172,7 @@ export default function Assistant() {
               style={{
                 width: 46, height: 46, borderRadius: 13, border: 0, flexShrink: 0,
                 background: mic.listening ? 'var(--madder)' : 'var(--paper-2)',
-                color: mic.listening ? '#fff' : 'var(--ink)', fontSize: 19,
+                color: mic.listening ? '#fff' : 'var(--ink)', fontSize: 'calc(19px * var(--font-scale))',
                 animation: mic.listening ? 'pulseRing 1.5s infinite' : 'none',
               }}
             >
@@ -189,7 +189,7 @@ export default function Assistant() {
             </button>
           </div>
           {mic.error && (
-            <div className="muted" style={{ fontSize: 11, lineHeight: 1.5, marginTop: 7 }} lang={lang}>
+            <div className="muted" style={{ fontSize: 'calc(11px * var(--font-scale))', lineHeight: 1.5, marginTop: 7 }} lang={lang}>
               {mic.error}
             </div>
           )}

@@ -107,6 +107,17 @@ def make_image(kind: str) -> bytes:
 def main() -> int:
     print(f"\nPAVHAN smoke test against {BASE}\n" + "=" * 62)
 
+    # Reset the catalogue first. Several checks publish listings, send quotes
+    # and advance orders, so without this the second run sees the leftovers of
+    # the first and fails on state it created itself.
+    print("\n[fixture]")
+    try:
+        reseeded = post_json("/api/admin/reseed", {})
+        check("catalogue reset to a known state", reseeded.get("seeded"),
+              f'{reseeded.get("products")} products, {reseeded.get("requirements")} requirements')
+    except Exception as exc:
+        check("catalogue reset to a known state", False, str(exc))
+
     print("\n[health]")
     health = get("/api/health")
     check("API is up", health.get("status") == "ok")
@@ -310,12 +321,15 @@ def main() -> int:
     check("assistant offers a next step", bool(money.get("action")))
 
     print("\n[sign-in]")
-    otp = post_json("/api/auth/request-otp", {"phone": "9990001111"})
+    # A fresh number each run: re-using one makes the second run see a
+    # returning user and fail a test that is really about onboarding.
+    phone = f"99{random.randint(10000000, 99999999)}"
+    otp = post_json("/api/auth/request-otp", {"phone": phone})
     check("OTP requested", otp["sent"])
     check("demo code is exposed only because no SMS gateway is set",
           bool(otp["demo_code"]) and otp["delivered_by_sms"] is False)
     session = post_json("/api/auth/verify-otp", {
-        "phone": "9990001111", "code": otp["demo_code"], "name": "Test Artisan",
+        "phone": phone, "code": otp["demo_code"], "name": "Test Artisan",
         "role": "artisan", "language": "hi",
     })
     check("signed in", bool(session["token"]))
@@ -428,6 +442,106 @@ def main() -> int:
                 check(f"{kind} is served", r.status == 200)
         except Exception as exc:
             check(f"{kind} is served", False, str(exc))
+
+    print("\n[MoSJE scheme impact — the ministry that posted this PS]")
+    catalogue = get("/api/impact/schemes")
+    check("MoSJE lending corporations listed",
+          {c["code"] for c in catalogue["corporations"]} >= {"NSFDC", "NSKFDC", "NBCFDC", "NDFDC"},
+          ", ".join(c["code"] for c in catalogue["corporations"]))
+    check("social categories cover MoSJE's beneficiaries",
+          {c["code"] for c in catalogue["social_categories"]} >= {"SC", "ST", "OBC", "DNT", "SK", "PwD"})
+    check("scheme terms are labelled indicative",
+          "indicative" in catalogue["disclaimer"].lower())
+
+    ministry = get("/api/impact/ministry")
+    check("ministry roll-up produced", ministry["artisans_total"] > 0,
+          f'{ministry["artisans_scheme_linked"]}/{ministry["artisans_total"]} scheme-linked')
+    check("uplift reports its sample size", "uplift_sample_size" in ministry)
+    check("implausible uplift is excluded, not averaged in",
+          "uplift_excluded_implausible" in ministry)
+    check("uplift is plausible, not a 900% artefact",
+          ministry["mean_uplift_percent"] is None or ministry["mean_uplift_percent"] < 400,
+          f'mean {ministry["mean_uplift_percent"]}%')
+    check("broken down by lending corporation", len(ministry["by_corporation"]) >= 2)
+    check("broken down by social category", len(ministry["by_social_category"]) >= 3,
+          str(ministry["by_social_category"]))
+    check("method is stated, not assumed", "survey recall" in ministry["method"])
+
+    artisan_row = ministry["artisans"][0]
+    detail = get(f'/api/impact/artisan/{artisan_row["id"]}')
+    check("an artisan's own record is measured from real orders",
+          detail["months_active"] > 1 and detail["orders"] >= 0,
+          f'{detail["months_active"]} months')
+    check("baseline is flagged self-declared",
+          any("self-declared" in n for n in detail["notes"]) or detail["baseline_monthly"] == 0)
+    if detail["loan_amount"] > 0:
+        check("loan repayment capacity computed",
+              detail["indicative_emi"] > 0 and detail["repayment_status"],
+              f'{detail["emi_coverage"]}x — {detail["repayment_status"]}')
+
+    print("\n[physical fairs — the PS's own framing]")
+    fair_data = get("/api/fairs")
+    names = {f["name"] for f in fair_data["fairs"]}
+    check("the fairs the PS names are present",
+          {"Shilp Samagam", "Dilli Haat"} <= names
+          and any("Surajkund" in n for n in names),
+          ", ".join(sorted(names)[:3]))
+    check("fair state is computed", all(f["state"] in ("upcoming", "running", "finished")
+                                        for f in fair_data["fairs"]))
+
+    stall = post_json("/api/fairs/stall", {"artisan_id": artisan_row["id"],
+                                           "stall_number": "T-01"})
+    check("stall card issued", len(stall["code"]) == 6, stall["code"])
+    try:
+        with urllib.request.urlopen(f'{BASE}/api/fairs/stall/{stall["code"]}/qr.svg',
+                                    timeout=10) as r:
+            svg = r.read().decode()
+        check("QR renders as SVG", r.status == 200 and svg.startswith("<svg"),
+              f"{len(svg)} bytes")
+    except Exception as exc:
+        check("QR renders as SVG", False, str(exc))
+
+    front = get(f'/api/fairs/stall/{stall["code"]}')
+    check("scanning opens the artisan's storefront",
+          front["artisan"]["id"] == artisan_row["id"] and front["scans"] >= 1)
+    followed = get(f'/api/fairs/stall/{stall["code"]}?follow=true')
+    check("a visitor can be kept", followed["follows"] >= 1)
+    perf = get(f'/api/fairs/stall/{stall["code"]}/performance')
+    check("post-fair conversion is measured",
+          "orders_after_fair" in perf and bool(perf["reading"]))
+
+    print("\n[two-way B2B — buyers post, artisans quote]")
+    reqs = get(f'/api/trade/requirements?artisan_id={artisan_row["id"]}')
+    check("open requirements exist", reqs["total"] >= 3, f'{reqs["total"]} open')
+    check("they are ranked for this artisan",
+          reqs["requirements"][0]["fit_score"] >= reqs["requirements"][-1]["fit_score"],
+          f'top fit {reqs["requirements"][0]["fit_score"]}')
+    check("the ranking explains itself",
+          any(r["fit_reasons"] for r in reqs["requirements"]))
+
+    target = next(r for r in reqs["requirements"] if not r["already_quoted"])
+    quote = post_json("/api/trade/quotes", {
+        "requirement_id": target["id"], "artisan_id": artisan_row["id"],
+        "unit_price": max(1, target["budget_min"]), "quantity": target["quantity"],
+        "lead_time_days": 20, "message": "Test quote",
+    })
+    check("an artisan can quote", bool(quote["id"]), f'total {quote["total"]}')
+    accepted = post_json(f'/api/trade/quotes/{quote["id"]}/accept', {})
+    check("accepting a quote creates a real order", bool(accepted["order_id"]),
+          f'Rs.{accepted["amount"]:,.0f}')
+
+    print("\n[orders with a timeline]")
+    orders = get(f'/api/trade/orders/artisan/{artisan_row["id"]}')
+    check("orders are listed", orders["summary"]["total"] > 0,
+          f'{orders["summary"]["total"]} orders')
+    check("five delivery stages are defined", len(orders["stages"]) == 5)
+    check("stage labels are bilingual",
+          all(s.get("label") and s.get("label_hi") for s in orders["stages"]))
+    an_order = orders["orders"][0]
+    moved = post_json_query(f'/api/trade/orders/{an_order["id"]}/advance',
+                            {"to": "shipped"})
+    check("an order can be advanced", moved["status"] == "shipped")
+    check("each move is timestamped", len(moved["timeline"]) >= 1)
 
     print("\n[artisan dashboard]")
     dash = get(f"/api/artisans/{artisan['id']}/dashboard")

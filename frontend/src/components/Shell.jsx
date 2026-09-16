@@ -36,7 +36,7 @@ export function TopBar({ title, subtitle, back, right, onBack }) {
         onClick={() => setLang(lang === 'hi' ? 'en' : 'hi')}
         aria-label="Switch language"
         title={lang === 'hi' ? 'Switch to English' : 'हिंदी में बदलिए'}
-        style={{ fontSize: 12, fontWeight: 700 }}
+        style={{ fontSize: 'calc(12px * var(--font-scale))', fontWeight: 700 }}
       >
         {lang === 'hi' ? 'अ' : 'A'}
       </button>
@@ -57,7 +57,7 @@ const NAV = {
     { to: '/artisan', icon: '🏠', label_hi: 'घर', label_en: 'Home' },
     { to: '/artisan/products', icon: '📦', label_hi: 'मेरा सामान', label_en: 'Products' },
     { to: '/add', icon: '🎤', label_hi: 'नया', label_en: 'Add', primary: true },
-    { to: '/artisan/buyers', icon: '🤝', label_hi: 'खरीदार', label_en: 'Buyers' },
+    { to: '/orders', icon: '📦', label_hi: 'ऑर्डर', label_en: 'Orders' },
     { to: '/profile', icon: '👤', label_hi: 'खाता', label_en: 'Profile' },
   ],
   customer: [
@@ -118,7 +118,7 @@ export function StatusStrip() {
   return (
     <div
       style={{
-        padding: '7px 14px', fontSize: 11.5, fontWeight: 600, textAlign: 'center',
+        padding: '7px 14px', fontSize: 'calc(11.5px * var(--font-scale))', fontWeight: 600, textAlign: 'center',
         background: pwa.online ? 'var(--leaf)' : 'var(--clay)', color: '#fff',
       }}
       lang={lang}
@@ -141,7 +141,9 @@ export function Screen({ children, nav = true, className = '' }) {
   return (
     <>
       <StatusStrip />
-      <div className={`app-body ${nav ? '' : 'no-nav'} ${className}`}>{children}</div>
+      <main id="main" className={`app-body ${nav ? '' : 'no-nav'} ${className}`}>
+        {children}
+      </main>
       {nav && <BottomNav />}
       <Toasts />
     </>

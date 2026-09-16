@@ -7,7 +7,8 @@ import { aiStatus, health, platformStats, priceModelCard, voiceLanguages } from 
 export default function Profile() {
   const navigate = useNavigate()
   const { t, lang, setLang, role, setRole, user, voiceOn, setVoiceOn, assistant,
-          sayRaw, L, pwa, theme, toggleTheme } = useApp()
+          sayRaw, L, pwa, theme, toggleTheme, fontScale, setFontScale,
+          contrast, setContrast } = useApp()
   const [status, setStatus] = useState(null)
   const [stats, setStats] = useState(null)
   const [modelCard, setModelCard] = useState(null)
@@ -42,23 +43,23 @@ export default function Profile() {
             <div
               style={{
                 width: 52, height: 52, borderRadius: 16, background: 'var(--paper-2)',
-                display: 'grid', placeItems: 'center', fontSize: 26,
+                display: 'grid', placeItems: 'center', fontSize: 'calc(26px * var(--font-scale))',
               }}
             >
               {user?.avatar || '👤'}
             </div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 700, fontSize: 15.5 }}>
+              <div style={{ fontWeight: 700, fontSize: 'calc(15.5px * var(--font-scale))' }}>
                 {user?.name || t('मेहमान', 'Guest')}
               </div>
-              <div className="muted" style={{ fontSize: 12, marginTop: 2 }}>
+              <div className="muted" style={{ fontSize: 'calc(12px * var(--font-scale))', marginTop: 2 }}>
                 {L(user?.craft_focus) || ''} {user?.region ? `· ${L(user.region)}` : ''}
               </div>
             </div>
           </div>
 
           <div className="card">
-            <div style={{ fontWeight: 700, fontSize: 13.5, marginBottom: 10 }} lang={lang}>
+            <div style={{ fontWeight: 700, fontSize: 'calc(13.5px * var(--font-scale))', marginBottom: 10 }} lang={lang}>
               {t('मैं यहाँ किस काम से हूँ', 'What I am here for')}
             </div>
             <div className="grid-2">
@@ -83,12 +84,12 @@ export default function Profile() {
                                            borderColor: 'var(--line)' }}>
               <div className="row-between">
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 700, fontSize: 13.5 }} lang={lang}>
+                  <div style={{ fontWeight: 700, fontSize: 'calc(13.5px * var(--font-scale))' }} lang={lang}>
                     📲 {pwa.installed
                       ? t('ऐप इंस्टॉल है', 'Installed as an app')
                       : t('फ़ोन में ऐप की तरह लगाइए', 'Install it like an app')}
                   </div>
-                  <div className="muted" style={{ fontSize: 11.5, lineHeight: 1.55, marginTop: 3 }}
+                  <div className="muted" style={{ fontSize: 'calc(11.5px * var(--font-scale))', lineHeight: 1.55, marginTop: 3 }}
                        lang={lang}>
                     {pwa.installed
                       ? t('बिना इंटरनेट भी खुलेगा और सहेजा काम दिखेगा।',
@@ -109,10 +110,10 @@ export default function Profile() {
           <div className="card">
             <div className="row-between" style={{ marginBottom: 12 }}>
               <div>
-                <div style={{ fontWeight: 700, fontSize: 13.5 }} lang={lang}>
+                <div style={{ fontWeight: 700, fontSize: 'calc(13.5px * var(--font-scale))' }} lang={lang}>
                   🗣️ {t('आवाज़ वाली मदद', 'Voice guide')}
                 </div>
-                <div className="muted" style={{ fontSize: 11.5, marginTop: 2, lineHeight: 1.5 }} lang={lang}>
+                <div className="muted" style={{ fontSize: 'calc(11.5px * var(--font-scale))', marginTop: 2, lineHeight: 1.5 }} lang={lang}>
                   {t('हर पन्ने पर बोलकर बताती है कि क्या करना है।',
                      'Explains every screen out loud as you go.')}
                 </div>
@@ -125,7 +126,7 @@ export default function Profile() {
               </button>
             </div>
             <div className="row-between" style={{ marginBottom: 12 }}>
-              <div style={{ fontWeight: 700, fontSize: 13.5 }} lang={lang}>
+              <div style={{ fontWeight: 700, fontSize: 'calc(13.5px * var(--font-scale))' }} lang={lang}>
                 {theme === 'dark' ? '🌙' : '☀️'} {t('रंग-रूप', 'Appearance')}
               </div>
               <div className="row" style={{ gap: 7 }}>
@@ -140,7 +141,7 @@ export default function Profile() {
               </div>
             </div>
             <div className="row-between">
-              <div style={{ fontWeight: 700, fontSize: 13.5 }} lang={lang}>
+              <div style={{ fontWeight: 700, fontSize: 'calc(13.5px * var(--font-scale))' }} lang={lang}>
                 🌐 {t('भाषा', 'Language')}
               </div>
               <div className="row" style={{ gap: 7 }}>
@@ -172,9 +173,54 @@ export default function Profile() {
             )}
           </div>
 
+          {/* MoSJE's beneficiaries include Divyangjan, and the problem
+              statement asks for accessible layouts in as many words. */}
+          <div className="card">
+            <div style={{ fontWeight: 700, fontSize: 'calc(13.5px * var(--font-scale))', marginBottom: 12 }} lang={lang}>
+              ♿ {t('पढ़ने में आसानी', 'Easier to read')}
+            </div>
+            <div className="row-between" style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 'calc(12.5px * var(--font-scale))', fontWeight: 600 }} lang={lang}>
+                {t('अक्षरों का आकार', 'Text size')}
+              </div>
+              <div className="row" style={{ gap: 7 }}>
+                {[['A', 0.9], ['A', 1], ['A', 1.2], ['A', 1.45]].map(([letter, scale], i) => (
+                  <button
+                    key={scale}
+                    className={`chip ${fontScale === scale ? 'active' : ''}`}
+                    onClick={() => setFontScale(scale)}
+                    aria-label={`${t('अक्षर आकार', 'Text size')} ${i + 1}`}
+                    style={{ fontSize: `${11 + i * 3}px`, fontWeight: 700,
+                             minWidth: 40, justifyContent: 'center' }}
+                  >
+                    {letter}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="row-between">
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 'calc(12.5px * var(--font-scale))', fontWeight: 600 }} lang={lang}>
+                  {t('ज़्यादा साफ़ रंग', 'High contrast')}
+                </div>
+                <div className="muted" style={{ fontSize: 'calc(11px * var(--font-scale))', lineHeight: 1.5, marginTop: 2 }}
+                     lang={lang}>
+                  {t('कम दिखाई देने पर या तेज़ धूप में', 'For low vision or bright sunlight')}
+                </div>
+              </div>
+              <button
+                className={`btn btn-sm ${contrast === 'high' ? 'btn-gold' : 'btn-soft'}`}
+                onClick={() => setContrast(contrast === 'high' ? 'normal' : 'high')}
+                aria-pressed={contrast === 'high'}
+              >
+                {contrast === 'high' ? t('चालू', 'On') : t('बंद', 'Off')}
+              </button>
+            </div>
+          </div>
+
           {status && (
             <div className="card">
-              <div style={{ fontWeight: 700, fontSize: 13.5, marginBottom: 10 }} lang={lang}>
+              <div style={{ fontWeight: 700, fontSize: 'calc(13.5px * var(--font-scale))', marginBottom: 10 }} lang={lang}>
                 ⚙️ {t('कौन सा इंजन चल रहा है', 'Which engines are live')}
               </div>
               {[
@@ -189,13 +235,13 @@ export default function Profile() {
                 <div
                   key={label}
                   className="row-between"
-                  style={{ fontSize: 12, padding: '7px 0', borderTop: '1px solid var(--line)' }}
+                  style={{ fontSize: 'calc(12px * var(--font-scale))', padding: '7px 0', borderTop: '1px solid var(--line)' }}
                 >
                   <span className="muted">{label}</span>
                   <span className="mono" style={{ fontWeight: 600 }}>{value}</span>
                 </div>
               ))}
-              <div className="muted" style={{ fontSize: 10.5, lineHeight: 1.55, marginTop: 9 }} lang={lang}>
+              <div className="muted" style={{ fontSize: 'calc(10.5px * var(--font-scale))', lineHeight: 1.55, marginTop: 9 }} lang={lang}>
                 {status.llm === 'claude'
                   ? t('Claude API जुड़ा है — विवरण और फोटो दोनों उसी से पढ़े जा रहे हैं।',
                        'Claude API is connected — copy and image understanding both run through it.')
@@ -213,8 +259,8 @@ export default function Profile() {
                 [stats.regions_covered, t('क्षेत्र', 'clusters')],
               ].map(([n, label]) => (
                 <div key={label} style={{ flex: 1 }}>
-                  <div className="mono" style={{ fontSize: 17, fontWeight: 800 }}>{n}</div>
-                  <div className="muted" style={{ fontSize: 9.5, textTransform: 'uppercase' }}>{label}</div>
+                  <div className="mono" style={{ fontSize: 'calc(17px * var(--font-scale))', fontWeight: 800 }}>{n}</div>
+                  <div className="muted" style={{ fontSize: 'calc(9.5px * var(--font-scale))', textTransform: 'uppercase' }}>{label}</div>
                 </div>
               ))}
             </div>
@@ -227,7 +273,7 @@ export default function Profile() {
             {t('शुरू से शुरू कीजिए', 'Start over')}
           </button>
 
-          <div className="center muted" style={{ fontSize: 10.5, lineHeight: 1.7, paddingTop: 6 }}>
+          <div className="center muted" style={{ fontSize: 'calc(10.5px * var(--font-scale))', lineHeight: 1.7, paddingTop: 6 }}>
             PAVHAN · AI-Powered Growth for Artisan Craft<br />
             Smart India Hackathon · PS 26090
           </div>

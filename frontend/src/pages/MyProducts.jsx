@@ -63,8 +63,8 @@ export default function MyProducts() {
                   >
                     <ProductImage product={p} height={78} style={{ width: 78 }} />
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 700, fontSize: 14, lineHeight: 1.3 }}>{p.title}</div>
-                      <div className="muted" style={{ fontSize: 11.5, margin: '3px 0 6px' }}>
+                      <div style={{ fontWeight: 700, fontSize: 'calc(14px * var(--font-scale))', lineHeight: 1.3 }}>{p.title}</div>
+                      <div className="muted" style={{ fontSize: 'calc(11.5px * var(--font-scale))', margin: '3px 0 6px' }}>
                         {L(p.material)} · {L(p.region)}
                       </div>
                       <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
@@ -82,7 +82,7 @@ export default function MyProducts() {
                         marginTop: 11, padding: '10px 12px', borderRadius: 11,
                         background: Math.abs(rp.delta_percent) < 5 ? 'var(--leaf-soft)' : '#fdf6ee',
                         border: `1px solid ${Math.abs(rp.delta_percent) < 5 ? '#bcdbd1' : '#e8d3b4'}`,
-                        fontSize: 12, lineHeight: 1.55,
+                        fontSize: 'calc(12px * var(--font-scale))', lineHeight: 1.55,
                       }}
                       lang={lang}
                     >

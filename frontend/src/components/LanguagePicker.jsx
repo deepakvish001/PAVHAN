@@ -27,7 +27,7 @@ export default function LanguagePicker({ value, onChange, compact = false }) {
         className="select"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        style={{ width: 'auto', padding: '8px 10px', fontSize: 13 }}
+        style={{ width: 'auto', padding: '8px 10px', fontSize: 'calc(13px * var(--font-scale))' }}
         aria-label={t('बोलने की भाषा', 'Speaking language')}
       >
         {languages.map((l) => (
@@ -44,15 +44,15 @@ export default function LanguagePicker({ value, onChange, compact = false }) {
         style={{ background: 'none', border: 0, padding: 0, width: '100%',
                  textAlign: 'left', display: 'flex', alignItems: 'center', gap: 10 }}
       >
-        <span style={{ fontSize: 20 }}>🗣️</span>
+        <span style={{ fontSize: 'calc(20px * var(--font-scale))' }}>🗣️</span>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--ink-soft)' }} lang={lang}>
+          <div style={{ fontSize: 'calc(11.5px * var(--font-scale))', fontWeight: 700, color: 'var(--ink-soft)' }} lang={lang}>
             {t('आप किस भाषा में बोलेंगे?', 'Which language will you speak?')}
           </div>
-          <div style={{ fontSize: 15, fontWeight: 700, marginTop: 2 }}>
+          <div style={{ fontSize: 'calc(15px * var(--font-scale))', fontWeight: 700, marginTop: 2 }}>
             {current?.native || '—'}
             {current && current.code !== 'en' && (
-              <span className="muted" style={{ fontSize: 12, fontWeight: 500 }}>
+              <span className="muted" style={{ fontSize: 'calc(12px * var(--font-scale))', fontWeight: 500 }}>
                 {'  '}· {current.name}
               </span>
             )}
@@ -68,14 +68,14 @@ export default function LanguagePicker({ value, onChange, compact = false }) {
               <button
                 key={l.code}
                 className={`chip ${value === l.code ? 'active' : ''}`}
-                style={{ padding: '9px 13px', fontSize: 13.5 }}
+                style={{ padding: '9px 13px', fontSize: 'calc(13.5px * var(--font-scale))' }}
                 onClick={() => { onChange(l.code); setOpen(false) }}
               >
                 {l.native}
               </button>
             ))}
           </div>
-          <div className="muted" style={{ fontSize: 11, lineHeight: 1.6, marginTop: 10 }} lang={lang}>
+          <div className="muted" style={{ fontSize: 'calc(11px * var(--font-scale))', lineHeight: 1.6, marginTop: 10 }} lang={lang}>
             {t('किसी भी भाषा में बोलिए — विवरण अंग्रेज़ी और हिंदी, दोनों में बनेगा।',
                'Speak in any of these — your listing is written in English and Hindi either way.')}
           </div>

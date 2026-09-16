@@ -91,7 +91,7 @@ function PhotoStep({ studio, working, backdrop, setBackdrop, onPick, onNext }) {
   return (
     <div className="page stack">
       <div>
-        <h2 style={{ fontSize: 21 }} lang={lang}>
+        <h2 style={{ fontSize: 'calc(21px * var(--font-scale))' }} lang={lang}>
           {t('पहले सामान की फोटो लीजिए', 'First, photograph your piece')}
         </h2>
         <p className="section-sub" style={{ marginTop: 6 }} lang={lang}>
@@ -135,8 +135,8 @@ function PhotoStep({ studio, working, backdrop, setBackdrop, onPick, onNext }) {
           </>
         ) : (
           <div className="center muted" style={{ padding: 30 }}>
-            <div style={{ fontSize: 40, marginBottom: 8 }}>📷</div>
-            <div style={{ fontSize: 13 }} lang={lang}>{t('अभी कोई फोटो नहीं', 'No photo yet')}</div>
+            <div style={{ fontSize: 'calc(40px * var(--font-scale))', marginBottom: 8 }}>📷</div>
+            <div style={{ fontSize: 'calc(13px * var(--font-scale))' }} lang={lang}>{t('अभी कोई फोटो नहीं', 'No photo yet')}</div>
           </div>
         )}
         {working && (
@@ -144,10 +144,10 @@ function PhotoStep({ studio, working, backdrop, setBackdrop, onPick, onNext }) {
                         display: 'grid', placeItems: 'center', color: '#fff' }}>
             <div className="center">
               <div className="spinner" style={{ margin: '0 auto 10px' }} />
-              <div style={{ fontSize: 13 }} lang={lang}>
+              <div style={{ fontSize: 'calc(13px * var(--font-scale))' }} lang={lang}>
                 {t('स्टूडियो में सुधारा जा रहा है…', 'Cleaning it up in the studio…')}
               </div>
-              <div style={{ fontSize: 11, color: '#b9c0da', marginTop: 5 }} lang={lang}>
+              <div style={{ fontSize: 'calc(11px * var(--font-scale))', color: '#b9c0da', marginTop: 5 }} lang={lang}>
                 {t('बैकग्राउंड, रोशनी, नाप', 'Background, lighting, framing')}
               </div>
             </div>
@@ -172,7 +172,7 @@ function PhotoStep({ studio, working, backdrop, setBackdrop, onPick, onNext }) {
       {studio && (
         <>
           <div className="card">
-            <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 9 }} lang={lang}>
+            <div style={{ fontWeight: 700, fontSize: 'calc(13px * var(--font-scale))', marginBottom: 9 }} lang={lang}>
               {t('बैकग्राउंड चुनिए', 'Choose a backdrop')}
             </div>
             <div className="row" style={{ gap: 9 }}>
@@ -183,7 +183,7 @@ function PhotoStep({ studio, working, backdrop, setBackdrop, onPick, onNext }) {
                                  borderRadius: 12, padding: 6, background: 'var(--card)' }}>
                   <div style={{ height: 34, borderRadius: 8, background: b.swatch,
                                 border: '1px solid var(--line)' }} />
-                  <div style={{ fontSize: 10, fontWeight: 700, marginTop: 5 }} lang={lang}>
+                  <div style={{ fontSize: 'calc(10px * var(--font-scale))', fontWeight: 700, marginTop: 5 }} lang={lang}>
                     {lang === 'hi' ? b.label_hi : b.label_en}
                   </div>
                 </button>
@@ -200,7 +200,7 @@ function PhotoStep({ studio, working, backdrop, setBackdrop, onPick, onNext }) {
         {studio ? t('आगे — अब बोलिए', 'Next — now speak')
                 : t('फोटो के बिना आगे बढ़िए', 'Continue without a photo')}
       </button>
-      <p className="center muted" style={{ fontSize: 11, lineHeight: 1.55 }} lang={lang}>
+      <p className="center muted" style={{ fontSize: 'calc(11px * var(--font-scale))', lineHeight: 1.55 }} lang={lang}>
         {t('बैकग्राउंड, रोशनी और नाप अपने आप ठीक होते हैं — बिना इंटरनेट के भी।',
            'Background, lighting and framing are fixed automatically — even offline.')}
       </p>
@@ -215,7 +215,7 @@ function StudioReport({ report }) {
   return (
     <div className="card fade-up">
       <div className="row-between" style={{ marginBottom: 9 }}>
-        <div style={{ fontWeight: 700, fontSize: 13.5 }} lang={lang}>
+        <div style={{ fontWeight: 700, fontSize: 'calc(13.5px * var(--font-scale))' }} lang={lang}>
           ✨ {t('स्टूडियो ने क्या किया', 'What the studio did')}
         </div>
         {report.background_removed && (
@@ -227,10 +227,10 @@ function StudioReport({ report }) {
                                                   marginBottom: 7 }}>
           <span style={{ flexShrink: 0 }}>{s.applied ? '✅' : '⚠️'}</span>
           <div>
-            <div style={{ fontSize: 12.5, fontWeight: 600 }} lang={lang}>
+            <div style={{ fontSize: 'calc(12.5px * var(--font-scale))', fontWeight: 600 }} lang={lang}>
               {lang === 'hi' ? s.label_hi : s.label}
             </div>
-            <div className="muted" style={{ fontSize: 11, lineHeight: 1.5 }} lang={lang}>
+            <div className="muted" style={{ fontSize: 'calc(11px * var(--font-scale))', lineHeight: 1.5 }} lang={lang}>
               {lang === 'hi' ? s.detail_hi || s.detail : s.detail}
             </div>
           </div>
@@ -258,7 +258,7 @@ function PhotoReport({ vision }) {
       <div className="row" style={{ gap: 12, alignItems: 'flex-start' }}>
         <ScoreRing value={vision.photo_quality} label={t('फोटो', 'photo')} />
         <div style={{ flex: 1 }}>
-          <div style={{ fontWeight: 700, fontSize: 13.5, marginBottom: 5 }} lang={lang}>
+          <div style={{ fontWeight: 700, fontSize: 'calc(13.5px * var(--font-scale))', marginBottom: 5 }} lang={lang}>
             {t('फोटो से क्या पढ़ा गया', 'What the photo told us')}
           </div>
           <div className="row" style={{ gap: 5, flexWrap: 'wrap', marginBottom: 8 }}>
@@ -278,7 +278,7 @@ function PhotoReport({ vision }) {
       </div>
       {tips.length > 0 && (
         <div style={{ marginTop: 11, paddingTop: 11, borderTop: '1px solid var(--line)',
-                      fontSize: 12, lineHeight: 1.6, color: 'var(--ink-soft)' }}>
+                      fontSize: 'calc(12px * var(--font-scale))', lineHeight: 1.6, color: 'var(--ink-soft)' }}>
           {tips.map((tip) => (
             <div key={tip} className="row" style={{ gap: 7, alignItems: 'flex-start' }} lang={lang}>
               <span>{vision.photo_quality >= 85 ? '✅' : '💡'}</span><span>{tip}</span>
@@ -421,7 +421,7 @@ function VoiceStep({ imageId, text, setText, spokenLang, setSpokenLang, onGenera
   return (
     <div className="page stack">
       <div>
-        <h2 style={{ fontSize: 21 }} lang={lang}>{t('अब बस बोलिए', 'Now just speak')}</h2>
+        <h2 style={{ fontSize: 'calc(21px * var(--font-scale))' }} lang={lang}>{t('अब बस बोलिए', 'Now just speak')}</h2>
         <p className="section-sub" style={{ marginTop: 6 }} lang={lang}>
           {t('अपनी भाषा में बताइए — यह क्या है, किस चीज़ से बना है, कितना बड़ा है, कितने दिन लगे।',
              'In your own language: what it is, what it is made of, how big it is, how long it took.')}
@@ -434,7 +434,7 @@ function VoiceStep({ imageId, text, setText, spokenLang, setSpokenLang, onGenera
 
       {mic.error && (
         <div className="card" style={{ borderColor: '#f0cbc6', background: '#fdf4f3',
-                                       fontSize: 12.5, lineHeight: 1.6 }} lang={lang}>
+                                       fontSize: 'calc(12.5px * var(--font-scale))', lineHeight: 1.6 }} lang={lang}>
           ⚠️ {mic.error}
         </div>
       )}
@@ -468,7 +468,7 @@ function VoiceStep({ imageId, text, setText, spokenLang, setSpokenLang, onGenera
         <button
           onClick={() => setShowSamples(!showSamples)}
           style={{ background: 'none', border: 0, padding: 0, width: '100%',
-                   textAlign: 'left', fontSize: 13, fontWeight: 700 }}
+                   textAlign: 'left', fontSize: 'calc(13px * var(--font-scale))', fontWeight: 700 }}
           lang={lang}
         >
           {showSamples ? '▾' : '▸'} {t('बोल नहीं पा रहे? तैयार नमूना चुनिए',
@@ -484,7 +484,7 @@ function VoiceStep({ imageId, text, setText, spokenLang, setSpokenLang, onGenera
                 </button>
               ))}
             </div>
-            <div className="muted" style={{ fontSize: 11, lineHeight: 1.55, marginTop: 9 }} lang={lang}>
+            <div className="muted" style={{ fontSize: 'calc(11px * var(--font-scale))', lineHeight: 1.55, marginTop: 9 }} lang={lang}>
               {t('हर नमूना अलग शिल्प का है — विवरण, दाम और खरीदार भी अलग बनेंगे।',
                  'Each sample is a different craft — the listing, the price and the buyers all change.')}
             </div>
@@ -515,7 +515,7 @@ function MicButton({ mic, onToggle }) {
           background: mic.listening
             ? 'linear-gradient(150deg, var(--madder) 0%, var(--madder-dark) 100%)'
             : 'linear-gradient(150deg, var(--ink) 0%, var(--ink-2) 100%)',
-          color: '#fff', fontSize: 38,
+          color: '#fff', fontSize: 'calc(38px * var(--font-scale))',
           boxShadow: mic.listening
             ? `0 0 0 ${8 + mic.level * 26}px rgba(176,57,43,${0.1 + mic.level * 0.14})`
             : 'var(--shadow-2)',
@@ -525,7 +525,7 @@ function MicButton({ mic, onToggle }) {
       >
         {mic.listening ? '⏹' : '🎤'}
       </button>
-      <div style={{ fontSize: 13, marginTop: 12, fontWeight: 600,
+      <div style={{ fontSize: 'calc(13px * var(--font-scale))', marginTop: 12, fontWeight: 600,
                     color: mic.listening ? 'var(--madder)' : 'var(--muted)' }} lang={lang}>
         {mic.listening ? t('सुन रहा हूँ… बोलते रहिए', 'Listening… keep speaking')
                        : t('माइक दबाकर बोलिए', 'Tap the mic and speak')}
@@ -533,7 +533,7 @@ function MicButton({ mic, onToggle }) {
       {mic.listening && (
         <div style={{ width: 150, margin: '9px auto 0' }}>
           <Bar value={Math.max(4, mic.level * 100)} tone="var(--madder)" height={5} />
-          <div className="muted" style={{ fontSize: 10, marginTop: 5 }} lang={lang}>
+          <div className="muted" style={{ fontSize: 'calc(10px * var(--font-scale))', marginTop: 5 }} lang={lang}>
             {mic.level > 0.06 ? t('आवाज़ आ रही है ✓', 'Picking up your voice ✓')
                               : t('थोड़ा ज़ोर से बोलिए', 'Speak a little louder')}
           </div>
@@ -596,7 +596,7 @@ function MicHelp({ diag, onRecord, recording, onTest }) {
       <button
         onClick={() => setOpen(!open)}
         style={{ background: 'none', border: 0, padding: 0, width: '100%', textAlign: 'left',
-                 fontSize: 12.5, fontWeight: 700, lineHeight: 1.5 }}
+                 fontSize: 'calc(12.5px * var(--font-scale))', fontWeight: 700, lineHeight: 1.5 }}
         lang={lang}
       >
         {fix
@@ -606,7 +606,7 @@ function MicHelp({ diag, onRecord, recording, onTest }) {
       </button>
 
       {fix && (
-        <div style={{ fontSize: 12.5, lineHeight: 1.7, marginTop: 9, color: 'var(--ink-soft)' }}
+        <div style={{ fontSize: 'calc(12.5px * var(--font-scale))', lineHeight: 1.7, marginTop: 9, color: 'var(--ink-soft)' }}
              lang={lang}>
           {lang === 'hi' ? fix.hi : fix.en}
         </div>
@@ -623,7 +623,7 @@ function MicHelp({ diag, onRecord, recording, onTest }) {
             [t('ब्राउज़र', 'Browser'), diag.browser],
           ].map(([label, value]) => (
             <div key={label} className="row-between"
-                 style={{ fontSize: 11.5, padding: '4px 0' }}>
+                 style={{ fontSize: 'calc(11.5px * var(--font-scale))', padding: '4px 0' }}>
               <span className="muted" lang={lang}>{label}</span>
               <span className="mono" style={{ fontWeight: 600, maxWidth: '60%',
                                               overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -663,7 +663,7 @@ function CoachCard({ tips }) {
   return (
     <div className="card tinted fade-up">
       <div className="row-between" style={{ marginBottom: 8 }}>
-        <div style={{ fontWeight: 700, fontSize: 13 }} lang={lang}>
+        <div style={{ fontWeight: 700, fontSize: 'calc(13px * var(--font-scale))' }} lang={lang}>
           {t('अब तक समझ आया', 'Understood so far')}
         </div>
         <span className="pill mono">{tips.completeness}%</span>
@@ -679,7 +679,7 @@ function CoachCard({ tips }) {
         <button
           onClick={() => sayRaw(tips.next_question)}
           style={{ marginTop: 11, background: 'none', border: 0, padding: 0, textAlign: 'left',
-                   fontSize: 12.5, color: 'var(--madder-dark)', fontWeight: 600,
+                   fontSize: 'calc(12.5px * var(--font-scale))', color: 'var(--madder-dark)', fontWeight: 600,
                    lineHeight: 1.5, display: 'flex', gap: 7 }}
           lang={lang}
         >
@@ -713,19 +713,19 @@ function ReviewStep({ listing, setListing, onNext }) {
         <div className="row" style={{ gap: 11, alignItems: 'flex-start' }}>
           <ScoreRing value={listing.quality_score} label={t('पूर्णता', 'complete')} />
           <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 700, fontSize: 14 }}>{L(listing.craft_type)}</div>
-            <div className="muted" style={{ fontSize: 11.5, lineHeight: 1.5, marginTop: 3 }}>
+            <div style={{ fontWeight: 700, fontSize: 'calc(14px * var(--font-scale))' }}>{L(listing.craft_type)}</div>
+            <div className="muted" style={{ fontSize: 'calc(11.5px * var(--font-scale))', lineHeight: 1.5, marginTop: 3 }}>
               {(meta.craft_evidence || []).slice(0, 2).join(' · ')}
             </div>
           </div>
         </div>
         {meta.improvement_tips?.length > 0 && (
           <div style={{ marginTop: 11, paddingTop: 10, borderTop: '1px solid var(--line)' }}>
-            <div style={{ fontSize: 11.5, fontWeight: 700, marginBottom: 6 }} lang={lang}>
+            <div style={{ fontSize: 'calc(11.5px * var(--font-scale))', fontWeight: 700, marginBottom: 6 }} lang={lang}>
               {t('इन्हें जोड़ेंगे तो और बिकेगा', 'Add these to sell more')}
             </div>
             {meta.improvement_tips.slice(0, 3).map((tip) => (
-              <div key={tip} className="row" style={{ gap: 7, fontSize: 12, lineHeight: 1.55,
+              <div key={tip} className="row" style={{ gap: 7, fontSize: 'calc(12px * var(--font-scale))', lineHeight: 1.55,
                    color: 'var(--ink-soft)', alignItems: 'flex-start' }}>
                 <span style={{ color: 'var(--marigold)' }}>▸</span><span>{tip}</span>
               </div>
@@ -753,7 +753,7 @@ function ReviewStep({ listing, setListing, onNext }) {
           government marketplace may search in either. Both are editable. */}
       <div className="card" style={{ background: 'var(--paper-2)' }}>
         <div className="row-between" style={{ marginBottom: 9 }}>
-          <div style={{ fontWeight: 700, fontSize: 13 }} lang={lang}>
+          <div style={{ fontWeight: 700, fontSize: 'calc(13px * var(--font-scale))' }} lang={lang}>
             🇮🇳 {t('हिंदी विवरण', 'Hindi listing')}
           </div>
           <span className="pill leaf">{t('अपने आप बना', 'auto-written')}</span>
@@ -798,11 +798,11 @@ function ReviewStep({ listing, setListing, onNext }) {
 
       {listing.story && (
         <div className="card" style={{ background: 'var(--marigold-soft)', borderColor: '#eccf9e' }}>
-          <div style={{ fontWeight: 700, fontSize: 12.5, marginBottom: 5 }} lang={lang}>
+          <div style={{ fontWeight: 700, fontSize: 'calc(12.5px * var(--font-scale))', marginBottom: 5 }} lang={lang}>
             📖 {t('आपकी कहानी — खरीदार यही दोबारा सुनाते हैं',
                   'Your story — this is what buyers retell')}
           </div>
-          <div style={{ fontSize: 12.5, lineHeight: 1.65, color: '#5e4413' }}>{listing.story}</div>
+          <div style={{ fontSize: 'calc(12.5px * var(--font-scale))', lineHeight: 1.65, color: '#5e4413' }}>{listing.story}</div>
         </div>
       )}
 
@@ -881,7 +881,7 @@ function PriceStep({ listing, setListing, onNext }) {
   return (
     <div className="page stack">
       <div>
-        <h2 style={{ fontSize: 21 }} lang={lang}>{t('आपका सही दाम', 'Your fair price')}</h2>
+        <h2 style={{ fontSize: 'calc(21px * var(--font-scale))' }} lang={lang}>{t('आपका सही दाम', 'Your fair price')}</h2>
         <p className="section-sub" style={{ marginTop: 6 }} lang={lang}>
           {t('मेहनत, माल और बाज़ार — तीनों जोड़कर।',
              'Your labour, your material and the live market, added up.')}
@@ -895,14 +895,14 @@ function PriceStep({ listing, setListing, onNext }) {
                            borderColor: chosen === tier.value ? 'var(--madder)' : 'var(--line)',
                            borderWidth: chosen === tier.value ? 2 : 1,
                            background: chosen === tier.value ? 'var(--paper-2)' : 'var(--card)' }}>
-            <div className="muted" style={{ fontSize: 10, fontWeight: 700,
+            <div className="muted" style={{ fontSize: 'calc(10px * var(--font-scale))', fontWeight: 700,
                                             textTransform: 'uppercase' }} lang={lang}>
               {tier.label}
             </div>
-            <div className="mono" style={{ fontSize: 16, fontWeight: 800, margin: '5px 0 3px' }}>
+            <div className="mono" style={{ fontSize: 'calc(16px * var(--font-scale))', fontWeight: 800, margin: '5px 0 3px' }}>
               {rupees(tier.value)}
             </div>
-            <div className="muted" style={{ fontSize: 9.5, lineHeight: 1.35 }} lang={lang}>
+            <div className="muted" style={{ fontSize: 'calc(9.5px * var(--font-scale))', lineHeight: 1.35 }} lang={lang}>
               {tier.note}
             </div>
           </button>
@@ -912,10 +912,10 @@ function PriceStep({ listing, setListing, onNext }) {
       <div className="card" style={{ background: 'var(--ink)', color: '#fff', border: 0 }}>
         <div className="row-between">
           <div>
-            <div style={{ fontSize: 11.5, color: '#b0b8d8' }} lang={lang}>
+            <div style={{ fontSize: 'calc(11.5px * var(--font-scale))', color: '#b0b8d8' }} lang={lang}>
               {t('इस दाम पर आपको मिलेगा', 'You take home')}
             </div>
-            <div className="mono" style={{ fontSize: 26, fontWeight: 800, marginTop: 3 }}>
+            <div className="mono" style={{ fontSize: 'calc(26px * var(--font-scale))', fontWeight: 800, marginTop: 3 }}>
               {rupees(chosen * 0.95 - 70)}
             </div>
           </div>
@@ -923,7 +923,7 @@ function PriceStep({ listing, setListing, onNext }) {
                      tone="var(--marigold)" />
         </div>
         {p.effective_hourly_wage > 0 && (
-          <div style={{ marginTop: 11, fontSize: 12, background: 'rgba(224,146,47,0.16)',
+          <div style={{ marginTop: 11, fontSize: 'calc(12px * var(--font-scale))', background: 'rgba(224,146,47,0.16)',
                         color: 'var(--marigold)', padding: '8px 11px', borderRadius: 10,
                         lineHeight: 1.5, fontWeight: 600 }} lang={lang}>
             {t(`यानी आपकी मेहनत के ₹${Math.round(p.effective_hourly_wage)} प्रति घंटे।`,
@@ -941,7 +941,7 @@ function PriceStep({ listing, setListing, onNext }) {
         <button
           onClick={() => setShowCosts(!showCosts)}
           style={{ background: 'none', border: 0, padding: 0, width: '100%',
-                   textAlign: 'left', fontWeight: 700, fontSize: 13.5 }}
+                   textAlign: 'left', fontWeight: 700, fontSize: 'calc(13.5px * var(--font-scale))' }}
           lang={lang}
         >
           {showCosts ? '▾' : '▸'} 🧮 {t('अपना असली ख़र्च भरिए (दाम और सटीक होगा)',
@@ -973,7 +973,7 @@ function PriceStep({ listing, setListing, onNext }) {
               {repricing ? <span className="spinner" />
                          : t('इन ख़र्चों से दाम निकालिए', 'Re-price with these costs')}
             </button>
-            <div className="muted" style={{ fontSize: 11, lineHeight: 1.55, marginTop: 9 }}
+            <div className="muted" style={{ fontSize: 'calc(11px * var(--font-scale))', lineHeight: 1.55, marginTop: 9 }}
                  lang={lang}>
               {t('जो खाली छोड़ेंगे उसके लिए आपके शिल्प का औसत लिया जाएगा।',
                  'Anything you leave blank falls back to the average for your craft.')}
@@ -985,27 +985,27 @@ function PriceStep({ listing, setListing, onNext }) {
       {warnings.map((w) => (
         <div key={w} className="card" style={{ background: 'var(--marigold-soft)',
                                                borderColor: 'var(--line)',
-                                               fontSize: 12.5, lineHeight: 1.6 }} lang={lang}>
+                                               fontSize: 'calc(12.5px * var(--font-scale))', lineHeight: 1.6 }} lang={lang}>
           ⚠️ {w}
         </div>
       ))}
 
       <div className="card">
-        <div style={{ fontWeight: 700, fontSize: 13.5, marginBottom: 10 }} lang={lang}>
+        <div style={{ fontWeight: 700, fontSize: 'calc(13.5px * var(--font-scale))', marginBottom: 10 }} lang={lang}>
           🧾 {t('पूरा हिसाब — किसी को भी दिखाइए', 'The full arithmetic — show it to anyone')}
         </div>
         {(p.breakdown || []).map((line) => {
           const note = lang === 'hi' ? line.note_hi || line.note : line.note
           return (
             <div key={line.label} style={{ marginBottom: 9 }}>
-              <div className="row-between" style={{ fontSize: 13 }}>
+              <div className="row-between" style={{ fontSize: 'calc(13px * var(--font-scale))' }}>
                 <span style={{ fontWeight: 600 }} lang={lang}>
                   {lang === 'hi' ? line.label_hi : line.label}
                 </span>
                 <span className="mono" style={{ fontWeight: 700 }}>{rupees(line.amount)}</span>
               </div>
               {note && (
-                <div className="muted" style={{ fontSize: 10.5, lineHeight: 1.45, marginTop: 2 }}
+                <div className="muted" style={{ fontSize: 'calc(10.5px * var(--font-scale))', lineHeight: 1.45, marginTop: 2 }}
                      lang={lang}>
                   {note}
                 </div>
@@ -1014,7 +1014,7 @@ function PriceStep({ listing, setListing, onNext }) {
           )
         })}
         <div className="divider" />
-        <div className="row-between" style={{ fontSize: 14, fontWeight: 800 }}>
+        <div className="row-between" style={{ fontSize: 'calc(14px * var(--font-scale))', fontWeight: 800 }}>
           <span lang={lang}>{t('कुल सलाह', 'Recommended')}</span>
           <span className="mono">{rupees(p.recommended)}</span>
         </div>
@@ -1022,12 +1022,12 @@ function PriceStep({ listing, setListing, onNext }) {
 
       {p.comparables?.length > 0 && (
         <div className="card">
-          <div style={{ fontWeight: 700, fontSize: 13.5, marginBottom: 10 }} lang={lang}>
+          <div style={{ fontWeight: 700, fontSize: 'calc(13.5px * var(--font-scale))', marginBottom: 10 }} lang={lang}>
             📊 {t('और जगह यही चीज़ किस दाम पर', 'What the same piece fetches elsewhere')}
           </div>
           {p.comparables.map((c) => (
             <div key={c.label} style={{ marginBottom: 10 }}>
-              <div className="row-between" style={{ fontSize: 12.5, marginBottom: 4 }}>
+              <div className="row-between" style={{ fontSize: 'calc(12.5px * var(--font-scale))', marginBottom: 4 }}>
                 <span lang={lang}>{lang === 'hi' ? c.label_hi || c.label : c.label}</span>
                 <span className="mono" style={{ fontWeight: 700 }}>{rupees(c.price)}</span>
               </div>
@@ -1040,11 +1040,11 @@ function PriceStep({ listing, setListing, onNext }) {
 
       {rationale.length > 0 && (
         <div className="card tinted">
-          <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }} lang={lang}>
+          <div style={{ fontWeight: 700, fontSize: 'calc(13px * var(--font-scale))', marginBottom: 8 }} lang={lang}>
             {t('यह दाम कैसे निकला', 'How we got here')}
           </div>
           {rationale.map((line) => (
-            <div key={line} className="row" style={{ gap: 7, fontSize: 12, lineHeight: 1.6,
+            <div key={line} className="row" style={{ gap: 7, fontSize: 'calc(12px * var(--font-scale))', lineHeight: 1.6,
                  marginBottom: 6, alignItems: 'flex-start' }}>
               <span style={{ color: 'var(--leaf)' }}>✓</span><span lang={lang}>{line}</span>
             </div>
@@ -1071,10 +1071,10 @@ function MarketModelCard({ pricing }) {
     <div className="card">
       <div className="row-between" style={{ marginBottom: 10 }}>
         <div>
-          <div style={{ fontWeight: 700, fontSize: 13.5 }} lang={lang}>
+          <div style={{ fontWeight: 700, fontSize: 'calc(13.5px * var(--font-scale))' }} lang={lang}>
             🤖 {t('बाज़ार मॉडल का अनुमान', 'What the market model predicts')}
           </div>
-          <div className="muted" style={{ fontSize: 10.5, marginTop: 2 }}>
+          <div className="muted" style={{ fontSize: 'calc(10.5px * var(--font-scale))', marginTop: 2 }}>
             {ml.model} · {t('औसत चूक', 'median error')} {ml.median_error_percent}%
           </div>
         </div>
@@ -1083,18 +1083,18 @@ function MarketModelCard({ pricing }) {
 
       <div className="row" style={{ gap: 12, alignItems: 'flex-end' }}>
         <div>
-          <div className="mono" style={{ fontSize: 22, fontWeight: 800 }}>{rupees(ml.price)}</div>
-          <div className="muted" style={{ fontSize: 10.5 }}>
+          <div className="mono" style={{ fontSize: 'calc(22px * var(--font-scale))', fontWeight: 800 }}>{rupees(ml.price)}</div>
+          <div className="muted" style={{ fontSize: 'calc(10.5px * var(--font-scale))' }}>
             {rupees(ml.low)} – {rupees(ml.high)}
           </div>
         </div>
         <div className="spacer" />
         <div style={{ textAlign: 'right' }}>
-          <div className="muted" style={{ fontSize: 10, textTransform: 'uppercase',
+          <div className="muted" style={{ fontSize: 'calc(10px * var(--font-scale))', textTransform: 'uppercase',
                                           fontWeight: 700 }} lang={lang}>
             {t('लागत से', 'from costs')}
           </div>
-          <div className="mono" style={{ fontSize: 15, fontWeight: 700 }}>
+          <div className="mono" style={{ fontSize: 'calc(15px * var(--font-scale))', fontWeight: 700 }}>
             {rupees(pricing.recommended)}
           </div>
         </div>
@@ -1103,7 +1103,7 @@ function MarketModelCard({ pricing }) {
       {rec && (
         <div style={{ marginTop: 11, padding: '9px 11px', borderRadius: 10,
                       background: rec.source === 'blended' ? 'var(--leaf-soft)' : 'var(--marigold-soft)',
-                      fontSize: 11.5, lineHeight: 1.6 }} lang={lang}>
+                      fontSize: 'calc(11.5px * var(--font-scale))', lineHeight: 1.6 }} lang={lang}>
           {lang === 'hi' ? rec.note_hi : rec.note}
         </div>
       )}
@@ -1111,7 +1111,7 @@ function MarketModelCard({ pricing }) {
       {ml.drivers?.length > 0 && (
         <>
           <button onClick={() => setOpen(!open)} className="btn btn-sm"
-                  style={{ background: 'none', padding: '9px 0 0', fontSize: 12,
+                  style={{ background: 'none', padding: '9px 0 0', fontSize: 'calc(12px * var(--font-scale))',
                            color: 'var(--indigo)', fontWeight: 700 }} lang={lang}>
             {open ? '▾' : '▸'} {t('इस दाम को किसने बढ़ाया-घटाया', 'What moved this price')}
           </button>
@@ -1119,7 +1119,7 @@ function MarketModelCard({ pricing }) {
             <div className="fade-up" style={{ marginTop: 8 }}>
               {ml.drivers.map((d) => (
                 <div key={d.feature} style={{ marginBottom: 8 }}>
-                  <div className="row-between" style={{ fontSize: 11.5, marginBottom: 3 }}>
+                  <div className="row-between" style={{ fontSize: 'calc(11.5px * var(--font-scale))', marginBottom: 3 }}>
                     <span style={{ fontWeight: 600 }} lang={lang}>
                       {lang === 'hi' ? d.label_hi : d.label}
                     </span>
@@ -1132,7 +1132,7 @@ function MarketModelCard({ pricing }) {
                        tone={d.direction === 'up' ? 'var(--leaf)' : 'var(--madder)'} height={4} />
                 </div>
               ))}
-              <div className="muted" style={{ fontSize: 10.5, lineHeight: 1.55, marginTop: 8 }}
+              <div className="muted" style={{ fontSize: 'calc(10.5px * var(--font-scale))', lineHeight: 1.55, marginTop: 8 }}
                    lang={lang}>
                 {t('यह इसी कृति के लिए है — हर सामान के लिए अलग होता है।',
                    'Measured for this piece specifically, not a generic chart.')}
@@ -1236,10 +1236,10 @@ function PublishStep({ listing, saved, setSaved, matches, setMatches, onDone }) 
     return (
       <div className="page center" style={{ paddingTop: 60 }}>
         <div className="spinner dark" style={{ margin: '0 auto 14px' }} />
-        <div style={{ fontSize: 14, fontWeight: 600 }} lang={lang}>
+        <div style={{ fontSize: 'calc(14px * var(--font-scale))', fontWeight: 600 }} lang={lang}>
           {t('खरीदार ढूँढे जा रहे हैं…', 'Finding buyers for this piece…')}
         </div>
-        <div className="muted" style={{ fontSize: 12, marginTop: 6 }} lang={lang}>
+        <div className="muted" style={{ fontSize: 'calc(12px * var(--font-scale))', marginTop: 6 }} lang={lang}>
           {t('हर खरीदार को सात बातों पर परखा जा रहा है।', 'Scoring every buyer on seven signals.')}
         </div>
       </div>
@@ -1250,12 +1250,12 @@ function PublishStep({ listing, saved, setSaved, matches, setMatches, onDone }) 
     <div className="page stack">
       <div className="card" style={{ background: 'var(--leaf-soft)', borderColor: '#bcdbd1' }}>
         <div className="row" style={{ gap: 10 }}>
-          <div style={{ fontSize: 26 }}>✅</div>
+          <div style={{ fontSize: 'calc(26px * var(--font-scale))' }}>✅</div>
           <div>
-            <div style={{ fontWeight: 700, fontSize: 14 }} lang={lang}>
+            <div style={{ fontWeight: 700, fontSize: 'calc(14px * var(--font-scale))' }} lang={lang}>
               {t('आपका सामान अब सबको दिख रहा है', 'Your listing is live')}
             </div>
-            <div style={{ fontSize: 12, color: '#145244', marginTop: 2 }}>{saved?.title}</div>
+            <div style={{ fontSize: 'calc(12px * var(--font-scale))', color: '#145244', marginTop: 2 }}>{saved?.title}</div>
           </div>
         </div>
       </div>
@@ -1268,8 +1268,8 @@ function PublishStep({ listing, saved, setSaved, matches, setMatches, onDone }) 
             [rupees(matches.summary.total_opportunity), t('कुल मौका', 'opportunity')],
           ].map(([n, label]) => (
             <div key={label} style={{ flex: 1 }}>
-              <div className="mono" style={{ fontSize: 16, fontWeight: 800 }}>{n}</div>
-              <div className="muted" style={{ fontSize: 9.5, textTransform: 'uppercase' }}
+              <div className="mono" style={{ fontSize: 'calc(16px * var(--font-scale))', fontWeight: 800 }}>{n}</div>
+              <div className="muted" style={{ fontSize: 'calc(9.5px * var(--font-scale))', textTransform: 'uppercase' }}
                    lang={lang}>{label}</div>
             </div>
           ))}
@@ -1301,9 +1301,9 @@ function DoneStep({ product, onRestart }) {
   useStepVoice('published', say)
   return (
     <div className="page center" style={{ paddingTop: 46 }}>
-      <div style={{ fontSize: 58, animation: 'floaty 3s ease-in-out infinite' }}>🎉</div>
-      <h2 style={{ fontSize: 22, margin: '14px 0 8px' }} lang={lang}>{t('शाबाश!', 'Well done!')}</h2>
-      <p className="muted" style={{ fontSize: 13.5, lineHeight: 1.65, marginBottom: 22 }} lang={lang}>
+      <div style={{ fontSize: 'calc(58px * var(--font-scale))', animation: 'floaty 3s ease-in-out infinite' }}>🎉</div>
+      <h2 style={{ fontSize: 'calc(22px * var(--font-scale))', margin: '14px 0 8px' }} lang={lang}>{t('शाबाश!', 'Well done!')}</h2>
+      <p className="muted" style={{ fontSize: 'calc(13.5px * var(--font-scale))', lineHeight: 1.65, marginBottom: 22 }} lang={lang}>
         {t('आपका सामान पूरे भारत के खरीदारों को दिख रहा है। पूछताछ आने पर हम बता देंगे।',
            'Your piece is visible to buyers across India. We will tell you the moment an enquiry arrives.')}
       </p>
@@ -1337,21 +1337,21 @@ export function BuyerMatchCard({ match, sent, onEnquire }) {
     <div className="card fade-up">
       <div className="row" style={{ gap: 11, alignItems: 'flex-start' }}>
         <div style={{ width: 44, height: 44, borderRadius: 13, background: 'var(--paper-2)',
-                      display: 'grid', placeItems: 'center', fontSize: 21, flexShrink: 0 }}>
+                      display: 'grid', placeItems: 'center', fontSize: 'calc(21px * var(--font-scale))', flexShrink: 0 }}>
           {match.logo}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div className="row-between">
-            <div style={{ fontWeight: 700, fontSize: 14 }}>{match.name}</div>
+            <div style={{ fontWeight: 700, fontSize: 'calc(14px * var(--font-scale))' }}>{match.name}</div>
             <span className="pill mono" style={{ background: `${tone}1a`, color: tone,
                                                  borderColor: `${tone}44` }}>
               {match.score}
             </span>
           </div>
-          <div className="muted" style={{ fontSize: 11.5, marginTop: 2 }}>
+          <div className="muted" style={{ fontSize: 'calc(11.5px * var(--font-scale))', marginTop: 2 }}>
             {L(match.org_type)} · {L(match.city)}, {L(match.country)}
           </div>
-          <div style={{ fontSize: 11.5, color: tone, fontWeight: 700, marginTop: 4 }} lang={lang}>
+          <div style={{ fontSize: 'calc(11.5px * var(--font-scale))', color: tone, fontWeight: 700, marginTop: 4 }} lang={lang}>
             {lang === 'hi' ? match.fit_label_hi || match.fit_label : match.fit_label}
           </div>
         </div>
@@ -1365,9 +1365,9 @@ export function BuyerMatchCard({ match, sent, onEnquire }) {
           [t('कुल', 'Order value'), rupees(match.estimated_order_value), 1.2, 'var(--leaf)'],
         ].map(([label, value, flex, colour]) => (
           <div key={label} style={{ flex }}>
-            <div className="muted" style={{ fontSize: 9.5, textTransform: 'uppercase',
+            <div className="muted" style={{ fontSize: 'calc(9.5px * var(--font-scale))', textTransform: 'uppercase',
                                             fontWeight: 700 }} lang={lang}>{label}</div>
-            <div className="mono" style={{ fontSize: 13.5, fontWeight: 700, color: colour }}>
+            <div className="mono" style={{ fontSize: 'calc(13.5px * var(--font-scale))', fontWeight: 700, color: colour }}>
               {value}
             </div>
           </div>
@@ -1375,7 +1375,7 @@ export function BuyerMatchCard({ match, sent, onEnquire }) {
       </div>
 
       <button onClick={() => setOpen(!open)} className="btn btn-sm"
-              style={{ background: 'none', padding: '9px 0 0', fontSize: 12,
+              style={{ background: 'none', padding: '9px 0 0', fontSize: 'calc(12px * var(--font-scale))',
                        color: 'var(--indigo)', fontWeight: 700 }} lang={lang}>
         {open ? '▾' : '▸'} {t('यह मेल क्यों खाता है', 'Why this is a match')}
       </button>
@@ -1384,7 +1384,7 @@ export function BuyerMatchCard({ match, sent, onEnquire }) {
         <div className="fade-up" style={{ marginTop: 8 }}>
           {match.factors.map((f) => (
             <div key={f.label} style={{ marginBottom: 9 }}>
-              <div className="row-between" style={{ fontSize: 11.5, marginBottom: 3 }}>
+              <div className="row-between" style={{ fontSize: 'calc(11.5px * var(--font-scale))', marginBottom: 3 }}>
                 <span style={{ fontWeight: 600 }} lang={lang}>
                   {lang === 'hi' ? f.label_hi || f.label : f.label}
                 </span>
@@ -1392,7 +1392,7 @@ export function BuyerMatchCard({ match, sent, onEnquire }) {
               </div>
               <Bar value={f.score * 100} height={4}
                    tone={f.score > 0.7 ? 'var(--leaf)' : f.score > 0.4 ? 'var(--marigold)' : 'var(--madder)'} />
-              <div className="muted" style={{ fontSize: 10.5, lineHeight: 1.45, marginTop: 3 }}
+              <div className="muted" style={{ fontSize: 'calc(10.5px * var(--font-scale))', lineHeight: 1.45, marginTop: 3 }}
                    lang={lang}>
                 {lang === 'hi' ? f.detail_hi || f.detail : f.detail}
               </div>
@@ -1400,13 +1400,13 @@ export function BuyerMatchCard({ match, sent, onEnquire }) {
           ))}
           {gaps.length > 0 && (
             <div style={{ background: '#fdf6ee', border: '1px solid #e8d3b4', borderRadius: 10,
-                          padding: '8px 10px', fontSize: 11, lineHeight: 1.5, marginTop: 6 }}
+                          padding: '8px 10px', fontSize: 'calc(11px * var(--font-scale))', lineHeight: 1.5, marginTop: 6 }}
                  lang={lang}>
               <strong>{t('ध्यान दीजिए: ', 'Watch out: ')}</strong>{gaps.join('. ')}
             </div>
           )}
           <div style={{ marginTop: 10, padding: '10px 11px', background: 'var(--marigold-soft)',
-                        borderRadius: 11, fontSize: 11.5, lineHeight: 1.6, color: '#5e4413' }}
+                        borderRadius: 11, fontSize: 'calc(11.5px * var(--font-scale))', lineHeight: 1.6, color: '#5e4413' }}
                lang={lang}>
             <div style={{ fontWeight: 700, marginBottom: 4 }}>
               💬 {t('आपके लिए लिखा हुआ संदेश', 'Your message, already written')}

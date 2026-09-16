@@ -15,8 +15,8 @@ from . import __version__
 from .config import MEDIA_DIR, settings
 from .database import Base, SessionLocal, engine
 from .routers import (
-    ai, assistant, auth, buyers, export, pricing, products, search, studio,
-    users, voice,
+    ai, assistant, auth, buyers, export, fairs, impact, pricing, products,
+    search, studio, trade, users, voice,
 )
 from .seed import seed
 from .services import llm, search_engine
@@ -68,7 +68,8 @@ app.add_middleware(
 
 for router in (products.router, search.router, ai.router, studio.router,
                pricing.router, buyers.router, voice.router, users.router,
-               assistant.router, auth.router, export.router):
+               assistant.router, auth.router, export.router,
+               impact.router, fairs.router, trade.router):
     app.include_router(router)
 
 MEDIA_DIR.mkdir(parents=True, exist_ok=True)

@@ -59,12 +59,12 @@ export default function MarketplaceExport() {
             <div className="row" style={{ gap: 13, alignItems: 'flex-start' }}>
               <ScoreRing value={report?.score ?? 0} label={t('तैयारी', 'ready')} />
               <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 700, fontSize: 14.5 }} lang={lang}>
+                <div style={{ fontWeight: 700, fontSize: 'calc(14.5px * var(--font-scale))' }} lang={lang}>
                   {report?.ready
                     ? t('यह सामान भेजने लायक तैयार है', 'This listing is submission-ready')
                     : t('कुछ जानकारी बाकी है', 'A few things are still missing')}
                 </div>
-                <div className="muted" style={{ fontSize: 11.5, lineHeight: 1.55, marginTop: 4 }}>
+                <div className="muted" style={{ fontSize: 'calc(11.5px * var(--font-scale))', lineHeight: 1.55, marginTop: 4 }}>
                   {t(`एचएसएन कोड ${report?.hsn_code} — ${report?.hsn_description}`,
                      `HSN ${report?.hsn_code} — ${report?.hsn_description}`)}
                 </div>
@@ -75,7 +75,7 @@ export default function MarketplaceExport() {
           {blocking.length > 0 && (
             <div className="card" style={{ background: 'var(--marigold-soft)',
                                            borderColor: 'var(--line)' }}>
-              <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }} lang={lang}>
+              <div style={{ fontWeight: 700, fontSize: 'calc(13px * var(--font-scale))', marginBottom: 8 }} lang={lang}>
                 {t('इनके बिना पोर्टल स्वीकार नहीं करेगा', 'The portal will reject it without these')}
               </div>
               {blocking.map((b) => (
@@ -83,8 +83,8 @@ export default function MarketplaceExport() {
                                                             marginBottom: 7 }}>
                   <span>⚠️</span>
                   <div>
-                    <div style={{ fontSize: 12.5, fontWeight: 600 }}>{b.field}</div>
-                    <div className="muted" style={{ fontSize: 11.5, lineHeight: 1.5 }} lang={lang}>
+                    <div style={{ fontSize: 'calc(12.5px * var(--font-scale))', fontWeight: 600 }}>{b.field}</div>
+                    <div className="muted" style={{ fontSize: 'calc(11.5px * var(--font-scale))', lineHeight: 1.5 }} lang={lang}>
                       {lang === 'hi' ? b.reason_hi : b.reason}
                     </div>
                   </div>
@@ -95,11 +95,11 @@ export default function MarketplaceExport() {
 
           {warnings.length > 0 && (
             <div className="card">
-              <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }} lang={lang}>
+              <div style={{ fontWeight: 700, fontSize: 'calc(13px * var(--font-scale))', marginBottom: 8 }} lang={lang}>
                 💡 {t('ये जोड़ने से बिक्री बढ़ेगी', 'These would help it sell')}
               </div>
               {warnings.map((w) => (
-                <div key={w.field} className="muted" style={{ fontSize: 11.5, lineHeight: 1.6 }}
+                <div key={w.field} className="muted" style={{ fontSize: 'calc(11.5px * var(--font-scale))', lineHeight: 1.6 }}
                      lang={lang}>
                   • {lang === 'hi' ? w.reason_hi : w.reason}
                 </div>
@@ -117,7 +117,7 @@ export default function MarketplaceExport() {
                 </button>
               ))}
             </div>
-            <div className="muted" style={{ fontSize: 11.5, lineHeight: 1.55, marginTop: 8 }}
+            <div className="muted" style={{ fontSize: 'calc(11.5px * var(--font-scale))', lineHeight: 1.55, marginTop: 8 }}
                  lang={lang}>
               {(() => {
                 const f = formats.find((x) => x.key === active)
@@ -138,12 +138,12 @@ export default function MarketplaceExport() {
 
           {preview && (
             <div className="card">
-              <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 9 }} lang={lang}>
+              <div style={{ fontWeight: 700, fontSize: 'calc(13px * var(--font-scale))', marginBottom: 9 }} lang={lang}>
                 {t('क्या भेजा जाएगा', 'What gets submitted')}
               </div>
               <pre
                 style={{
-                  fontSize: 10.5, lineHeight: 1.6, overflowX: 'auto', margin: 0,
+                  fontSize: 'calc(10.5px * var(--font-scale))', lineHeight: 1.6, overflowX: 'auto', margin: 0,
                   background: 'var(--paper-2)', padding: 12, borderRadius: 10,
                   maxHeight: 320, color: 'var(--ink-soft)',
                 }}
@@ -154,10 +154,10 @@ export default function MarketplaceExport() {
           )}
 
           <div className="card tinted">
-            <div style={{ fontWeight: 700, fontSize: 12.5, marginBottom: 6 }} lang={lang}>
+            <div style={{ fontWeight: 700, fontSize: 'calc(12.5px * var(--font-scale))', marginBottom: 6 }} lang={lang}>
               {t('साफ़-साफ़ बात', 'Being straight with you')}
             </div>
-            <div style={{ fontSize: 11.5, lineHeight: 1.7, color: 'var(--ink-soft)' }} lang={lang}>
+            <div style={{ fontSize: 'calc(11.5px * var(--font-scale))', lineHeight: 1.7, color: 'var(--ink-soft)' }} lang={lang}>
               {lang === 'hi' ? report?.note_hi : report?.note}
             </div>
           </div>

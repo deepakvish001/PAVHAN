@@ -77,16 +77,16 @@ export default function Welcome() {
               <div
                 style={{
                   width: 38, height: 38, borderRadius: 11, background: 'var(--marigold)',
-                  display: 'grid', placeItems: 'center', fontSize: 19,
+                  display: 'grid', placeItems: 'center', fontSize: 'calc(19px * var(--font-scale))',
                 }}
               >
                 🪡
               </div>
               <div>
-                <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 700, letterSpacing: '0.02em' }}>
+                <div style={{ fontFamily: 'var(--font-display)', fontSize: 'calc(20px * var(--font-scale))', fontWeight: 700, letterSpacing: '0.02em' }}>
                   PAVHAN
                 </div>
-                <div style={{ fontSize: 9.5, color: '#a9b1cf', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                <div style={{ fontSize: 'calc(9.5px * var(--font-scale))', color: '#a9b1cf', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
                   AI-Powered Growth for Artisan Craft
                 </div>
               </div>
@@ -95,7 +95,7 @@ export default function Welcome() {
               <button
                 className="topbar-btn"
                 onClick={() => setLang(lang === 'hi' ? 'en' : 'hi')}
-                style={{ fontSize: 12, fontWeight: 700 }}
+                style={{ fontSize: 'calc(12px * var(--font-scale))', fontWeight: 700 }}
               >
                 {lang === 'hi' ? 'अ' : 'A'}
               </button>
@@ -109,7 +109,7 @@ export default function Welcome() {
           </div>
 
           <h2
-            style={{ fontSize: 27, lineHeight: 1.24, color: '#fff', marginBottom: 10 }}
+            style={{ fontSize: 'calc(27px * var(--font-scale))', lineHeight: 1.24, color: '#fff', marginBottom: 10 }}
             lang={lang}
           >
             {lang === 'hi' ? (
@@ -118,7 +118,7 @@ export default function Welcome() {
               <>Your craft.<br /><span style={{ color: 'var(--marigold)' }}>Your full price.</span></>
             )}
           </h2>
-          <p style={{ fontSize: 13.5, color: '#b9c0dc', lineHeight: 1.65, margin: '0 0 4px' }} lang={lang}>
+          <p style={{ fontSize: 'calc(13.5px * var(--font-scale))', color: '#b9c0dc', lineHeight: 1.65, margin: '0 0 4px' }} lang={lang}>
             {lang === 'hi'
               ? 'बस बोलिए और एक फोटो खींचिए। विवरण, सही कीमत और खरीदार — तीनों हम तैयार कर देंगे।'
               : 'Just speak and take one photo. The listing, a fair price and matched buyers all follow.'}
@@ -133,10 +133,10 @@ export default function Welcome() {
                 [`${stats.artisan_share_percent}%`, lang === 'hi' ? 'कारीगर को' : 'to the maker'],
               ].map(([n, label]) => (
                 <div key={label}>
-                  <div className="mono" style={{ fontSize: 19, fontWeight: 800, color: 'var(--marigold)' }}>
+                  <div className="mono" style={{ fontSize: 'calc(19px * var(--font-scale))', fontWeight: 800, color: 'var(--marigold)' }}>
                     {n}
                   </div>
-                  <div style={{ fontSize: 10, color: '#98a0c0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  <div style={{ fontSize: 'calc(10px * var(--font-scale))', color: '#98a0c0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                     {label}
                   </div>
                 </div>
@@ -178,20 +178,20 @@ export default function Welcome() {
                 <div
                   style={{
                     width: 46, height: 46, borderRadius: 14, display: 'grid',
-                    placeItems: 'center', fontSize: 23, background: `${r.accent}1a`,
+                    placeItems: 'center', fontSize: 'calc(23px * var(--font-scale))', background: `${r.accent}1a`,
                   }}
                 >
                   {r.icon}
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 700, fontSize: 15 }} lang={lang}>
+                  <div style={{ fontWeight: 700, fontSize: 'calc(15px * var(--font-scale))' }} lang={lang}>
                     {lang === 'hi' ? r.title_hi : r.title}
                   </div>
-                  <div style={{ fontSize: 11.5, color: 'var(--muted)', marginTop: 2 }} lang={lang}>
+                  <div style={{ fontSize: 'calc(11.5px * var(--font-scale))', color: 'var(--muted)', marginTop: 2 }} lang={lang}>
                     {lang === 'hi' ? r.subtitle_hi : r.subtitle}
                   </div>
                 </div>
-                <div style={{ color: r.accent, fontSize: 19 }}>
+                <div style={{ color: r.accent, fontSize: 'calc(19px * var(--font-scale))' }}>
                   {picked === r.key ? '✓' : '→'}
                 </div>
               </button>
@@ -208,7 +208,7 @@ export default function Welcome() {
 
           <p
             className="center muted"
-            style={{ fontSize: 11, marginTop: 14, lineHeight: 1.6 }}
+            style={{ fontSize: 'calc(11px * var(--font-scale))', marginTop: 14, lineHeight: 1.6 }}
             lang={lang}
           >
             {lang === 'hi'
@@ -226,13 +226,13 @@ export default function Welcome() {
             justifyContent: 'center', padding: '32px 28px', textAlign: 'center',
           }}
         >
-          <div style={{ fontSize: 44, marginBottom: 18, animation: 'floaty 2.6s ease-in-out infinite' }}>
+          <div style={{ fontSize: 'calc(44px * var(--font-scale))', marginBottom: 18, animation: 'floaty 2.6s ease-in-out infinite' }}>
             🗣️
           </div>
           <p
             lang={lang}
             style={{
-              fontSize: 16, lineHeight: 1.85, maxWidth: 360, margin: '0 0 26px',
+              fontSize: 'calc(16px * var(--font-scale))', lineHeight: 1.85, maxWidth: 360, margin: '0 0 26px',
               fontFamily: lang === 'hi' ? 'var(--font-hi)' : 'var(--font-ui)',
             }}
           >
@@ -245,7 +245,7 @@ export default function Welcome() {
           >
             {lang === 'hi' ? 'आगे बढ़िए →' : 'Continue →'}
           </button>
-          <div style={{ fontSize: 11, color: '#9aa0bd', marginTop: 14 }} lang={lang}>
+          <div style={{ fontSize: 'calc(11px * var(--font-scale))', color: '#9aa0bd', marginTop: 14 }} lang={lang}>
             {lang === 'hi' ? 'सुनकर अपने आप आगे बढ़ जाएगा' : 'It continues on its own when the line ends'}
           </div>
         </div>

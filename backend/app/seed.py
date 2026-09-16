@@ -18,23 +18,54 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .models import Buyer, Order, Product, User
+from .models import (
+    Buyer, BuyerRequirement, Exhibition, Order, Product, Quote, StallCard, User,
+)
+from .services.fairs import KNOWN_FAIRS, new_code
 from .services.pricing import recommend_price
 from .services.taxonomy import CRAFT_INDEX
 
+# Each artisan carries the assistance programme that financed their unit —
+# that linkage is what lets the platform report back to the ministry whether
+# the money changed anything. Baselines are the artisan's own stated figure.
 ARTISANS = [
-    dict(name="Rukhsana Bano", role="artisan", region="Varanasi", craft_focus="Banarasi Handloom Silk",
-         experience_years=22, avatar="🧕", language="hi", phone="+91 90000 11111"),
-    dict(name="Mohan Lal Prajapati", role="artisan", region="Jaipur", craft_focus="Jaipur Blue Pottery",
-         experience_years=17, avatar="🧑‍🎨", language="hi", phone="+91 90000 22222"),
-    dict(name="Sita Devi Jha", role="artisan", region="Madhubani", craft_focus="Madhubani Painting",
-         experience_years=31, avatar="👩‍🎨", language="hi", phone="+91 90000 33333"),
-    dict(name="Budhram Netam", role="artisan", region="Bastar", craft_focus="Dhokra Metal Craft",
-         experience_years=26, avatar="🧑‍🏭", language="hi", phone="+91 90000 44444"),
-    dict(name="Rita Baruah", role="artisan", region="Assam", craft_focus="Bamboo & Cane Craft",
-         experience_years=12, avatar="👩‍🌾", language="en", phone="+91 90000 55555"),
-    dict(name="Abdul Rashid Mir", role="artisan", region="Srinagar", craft_focus="Kashmiri Pashmina",
-         experience_years=35, avatar="🧔", language="hi", phone="+91 90000 66666"),
+    dict(name="Rukhsana Bano", role="artisan", region="Varanasi",
+         craft_focus="Banarasi Handloom Silk", experience_years=22, avatar="🧕",
+         language="hi", phone="+91 90000 11111",
+         social_category="OBC", corporation="NBCFDC", scheme_name="Shilp Sampada",
+         beneficiary_id="NBCFDC/UP/2023/04412", loan_amount=180000,
+         baseline_monthly_income=6500, cluster="Varanasi Handloom Cluster"),
+    dict(name="Mohan Lal Prajapati", role="artisan", region="Jaipur",
+         craft_focus="Jaipur Blue Pottery", experience_years=17, avatar="🧑‍🎨",
+         language="hi", phone="+91 90000 22222",
+         social_category="SC", corporation="NSFDC", scheme_name="Shilpi Samridhi Yojana",
+         beneficiary_id="NSFDC/RJ/2022/11907", loan_amount=250000,
+         baseline_monthly_income=7200, cluster="Jaipur Blue Pottery Cluster"),
+    dict(name="Sita Devi Jha", role="artisan", region="Madhubani",
+         craft_focus="Madhubani Painting", experience_years=31, avatar="👩‍🎨",
+         language="hi", phone="+91 90000 33333",
+         social_category="SC", corporation="NSFDC", scheme_name="Mahila Samriddhi Yojana",
+         beneficiary_id="NSFDC/BR/2023/08815", loan_amount=120000,
+         baseline_monthly_income=4800, shg_name="Mithila Kala Mahila Samiti",
+         cluster="Madhubani Painting Cluster"),
+    dict(name="Budhram Netam", role="artisan", region="Bastar",
+         craft_focus="Dhokra Metal Craft", experience_years=26, avatar="🧑‍🏭",
+         language="hi", phone="+91 90000 44444",
+         social_category="ST", corporation="NSFDC", scheme_name="Term Loan",
+         beneficiary_id="NSFDC/CG/2021/03329", loan_amount=200000,
+         baseline_monthly_income=5400, cluster="Bastar Dhokra Cluster"),
+    dict(name="Rita Baruah", role="artisan", region="Assam",
+         craft_focus="Bamboo & Cane Craft", experience_years=12, avatar="👩‍🌾",
+         language="en", phone="+91 90000 55555",
+         social_category="OBC", corporation="NBCFDC", scheme_name="Swarnima for Women",
+         beneficiary_id="NBCFDC/AS/2024/00761", loan_amount=90000,
+         baseline_monthly_income=3900, shg_name="Sualkuchi Cane Collective",
+         cluster="Assam Bamboo Cluster"),
+    dict(name="Abdul Rashid Mir", role="artisan", region="Srinagar",
+         craft_focus="Kashmiri Pashmina", experience_years=35, avatar="🧔",
+         language="hi", phone="+91 90000 66666",
+         social_category="GEN", corporation="", scheme_name="",
+         baseline_monthly_income=9000, cluster="Srinagar Pashmina Cluster"),
 ]
 
 # (craft_key, artisan index, noun, colour, size, weight, work_days, stock, note)
@@ -195,15 +226,17 @@ def seed(db: Session, *, force: bool = False) -> dict:
         db.commit()
 
     rng = random.Random(26090)  # deterministic demo data (SIH PS number)
+    now = datetime.now(timezone.utc)
     users: list[User] = []
-    for spec in ARTISANS:
-        user = User(**spec)
+    for i, spec in enumerate(ARTISANS):
+        # Joined between ten and eighteen months ago. Without a realistic
+        # tenure, annualising their sales produces monthly income in lakhs.
+        user = User(**spec, created_at=now - timedelta(days=300 + i * 25))
         db.add(user)
         users.append(user)
     db.flush()
 
     products: list[Product] = []
-    now = datetime.now(timezone.utc)
     for i, (craft_key, artisan_idx, noun, colour, size, weight, days, stock, note) in enumerate(
         CATALOGUE
     ):
@@ -285,8 +318,8 @@ def seed(db: Session, *, force: bool = False) -> dict:
         db.add(Buyer(**spec))
 
     # A little sales history so the artisan dashboard is not all zeros.
-    for product in products[:9]:
-        for _ in range(rng.randint(1, 3)):
+    for product in products:
+        for _ in range(rng.randint(2, 6)):
             qty = rng.randint(1, 2)
             amount = product.price * qty
             db.add(Order(
@@ -295,9 +328,78 @@ def seed(db: Session, *, force: bool = False) -> dict:
                     ["Ananya R.", "Kabir S.", "Meera T.", "Devon W.", "Priya N.", "Arjun M."]
                 ),
                 quantity=qty, amount=amount, artisan_payout=round(amount * 0.95, 2),
-                status=rng.choice(["delivered", "shipped", "placed"]),
-                created_at=now - timedelta(days=rng.randint(1, 60)),
+                status=rng.choice(["delivered", "delivered", "shipped", "placed"]),
+                created_at=now - timedelta(days=rng.randint(5, 290)),
             ))
+
+    db.flush()
+
+    # --- fairs, stall cards and B2B requirements -------------------------
+    now_naive = now.replace(tzinfo=None)
+    exhibitions = []
+    for i, fair in enumerate(KNOWN_FAIRS):
+        ex = Exhibition(
+            name=fair["name"], name_hi=fair["name_hi"], venue=fair["venue"],
+            city=fair["city"], organiser=fair["organiser"],
+            annual_footfall=fair["annual_footfall"],
+            # Stagger them so the demo shows a finished fair, a running one
+            # and one still to come.
+            starts_on=now_naive - timedelta(days=60 - i * 30),
+            ends_on=now_naive - timedelta(days=46 - i * 30),
+        )
+        db.add(ex)
+        exhibitions.append(ex)
+    db.flush()
+
+    stall_cards = []
+    for artisan, ex in zip(users[:4], exhibitions):
+        card = StallCard(
+            artisan_id=artisan.id, exhibition_id=ex.id, code=new_code(),
+            stall_number=f"{chr(65 + rng.randint(0, 5))}-{rng.randint(10, 99)}",
+            scans=rng.randint(40, 260), follows=rng.randint(12, 90),
+        )
+        db.add(card)
+        stall_cards.append(card)
+
+    requirement_specs = [
+        ("Handwoven silk sarees for a bridal collection", "Textiles",
+         "Banarasi Handloom Silk", "Pure Silk", 40, 12000, 30000, 60,
+         ["Varanasi", "Kanchipuram"]),
+        ("Bamboo storage baskets for store fit-out", "Natural Fibre",
+         "Bamboo & Cane Craft", "Bamboo", 400, 600, 1400, 75, ["Assam", "Tripura"]),
+        ("Blue pottery dinnerware for a hotel opening", "Pottery & Ceramics",
+         "Jaipur Blue Pottery", "Quartz Ceramic", 200, 1800, 4500, 55, ["Jaipur"]),
+        ("Madhubani panels for a museum shop", "Folk Art",
+         "Madhubani Painting", "Handmade Paper", 25, 4000, 15000, 90, ["Madhubani"]),
+        ("Dhokra figurines for corporate gifting", "Metalwork",
+         "Dhokra Metal Craft", "Brass / Bell Metal", 300, 900, 2500, 45, []),
+    ]
+    buyer_rows = list(db.scalars(select(Buyer)).all())
+    requirements = []
+    for i, (title, cat, craft, material, qty, lo, hi, days, regions) in enumerate(
+            requirement_specs):
+        req = BuyerRequirement(
+            buyer_id=buyer_rows[i % len(buyer_rows)].id, title=title,
+            description=f"Looking for {qty} pieces. Consistent quality across the lot "
+                        f"matters more than the lowest price; we reorder every season.",
+            category=cat, craft_type=craft, material=material, quantity=qty,
+            budget_min=lo, budget_max=hi, delivery_days=days,
+            preferred_regions=regions,
+            created_at=now - timedelta(days=rng.randint(1, 20)),
+        )
+        db.add(req)
+        requirements.append(req)
+    db.flush()
+
+    # One quote already in flight, so the screen is not empty on first open.
+    first_product = next((p for p in products if p.artisan_id == users[4].id), products[0])
+    db.add(Quote(
+        requirement_id=requirements[1].id, artisan_id=users[4].id,
+        product_id=first_product.id, unit_price=880, quantity=400,
+        lead_time_days=40,
+        message="I can supply 400 baskets in two batches of 200, forty days for the first.",
+        created_at=now - timedelta(days=3),
+    ))
 
     db.commit()
     return {
@@ -305,4 +407,7 @@ def seed(db: Session, *, force: bool = False) -> dict:
         "artisans": len(users),
         "products": len(products),
         "buyers": len(BUYERS),
+        "fairs": len(exhibitions),
+        "stalls": len(stall_cards),
+        "requirements": len(requirements),
     }

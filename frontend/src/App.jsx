@@ -15,6 +15,11 @@ import Profile from './pages/Profile'
 import Login from './pages/Login'
 import Assistant from './pages/Assistant'
 import MarketplaceExport from './pages/MarketplaceExport'
+import Impact from './pages/Impact'
+import FairMode from './pages/FairMode'
+import Storefront from './pages/Storefront'
+import Orders from './pages/Orders'
+import Requirements from './pages/Requirements'
 
 /** Screens behind the role gate — visiting them without a role sends you to
  *  the front door, which is where the app asks who you are. */
@@ -36,6 +41,7 @@ export default function App() {
 
   return (
     <div className="app-frame">
+      <a className="skip-link" href="#main">Skip to content</a>
       <div className="app-shell">
         <Routes>
           <Route path="/" element={<Welcome />} />
@@ -51,6 +57,12 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/assistant" element={<Assistant />} />
           <Route path="/export/:id" element={<MarketplaceExport />} />
+          <Route path="/impact" element={<Impact />} />
+          <Route path="/fairs" element={<RequireRole><FairMode /></RequireRole>} />
+          <Route path="/orders" element={<RequireRole><Orders /></RequireRole>} />
+          <Route path="/requirements" element={<RequireRole><Requirements /></RequireRole>} />
+          {/* A stall QR must open for anyone, with no role and no sign-in. */}
+          <Route path="/s/:code" element={<Storefront />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>

@@ -74,16 +74,16 @@ export default function ArtisanHome() {
               color: '#fff', border: 0,
             }}
           >
-            <div style={{ fontSize: 11.5, color: '#b0b8d8', fontWeight: 600 }} lang={lang}>
+            <div style={{ fontSize: 'calc(11.5px * var(--font-scale))', color: '#b0b8d8', fontWeight: 600 }} lang={lang}>
               {t('अब तक आपकी कमाई', 'Your earnings so far')}
             </div>
-            <div className="mono" style={{ fontSize: 31, fontWeight: 800, margin: '3px 0 8px' }}>
+            <div className="mono" style={{ fontSize: 'calc(31px * var(--font-scale))', fontWeight: 800, margin: '3px 0 8px' }}>
               <Money value={s?.earnings} />
             </div>
             {s?.extra_vs_middleman > 0 && (
               <div
                 style={{
-                  fontSize: 12, background: 'rgba(224,146,47,0.16)', color: 'var(--marigold)',
+                  fontSize: 'calc(12px * var(--font-scale))', background: 'rgba(224,146,47,0.16)', color: 'var(--marigold)',
                   padding: '7px 11px', borderRadius: 10, lineHeight: 1.5, fontWeight: 600,
                 }}
                 lang={lang}
@@ -102,8 +102,8 @@ export default function ArtisanHome() {
                 [s?.open_enquiries, t('पूछताछ', 'enquiries')],
               ].map(([n, label]) => (
                 <div key={label}>
-                  <div className="mono" style={{ fontSize: 17, fontWeight: 800 }}>{n ?? 0}</div>
-                  <div style={{ fontSize: 9.5, color: '#98a0c0', textTransform: 'uppercase' }}>
+                  <div className="mono" style={{ fontSize: 'calc(17px * var(--font-scale))', fontWeight: 800 }}>{n ?? 0}</div>
+                  <div style={{ fontSize: 'calc(9.5px * var(--font-scale))', color: '#98a0c0', textTransform: 'uppercase' }}>
                     {label}
                   </div>
                 </div>
@@ -114,7 +114,7 @@ export default function ArtisanHome() {
           {/* Primary action */}
           <button
             className="btn btn-primary btn-block fade-up"
-            style={{ padding: '17px', fontSize: 16 }}
+            style={{ padding: '17px', fontSize: 'calc(16px * var(--font-scale))' }}
             onClick={() => navigate('/add')}
           >
             🎤 {t('बोलकर नया सामान डालिए', 'Add a product by voice')}
@@ -127,12 +127,12 @@ export default function ArtisanHome() {
           >
             <div style={{ width: 42, height: 42, borderRadius: 13, flexShrink: 0,
                           background: 'var(--marigold-soft)', display: 'grid',
-                          placeItems: 'center', fontSize: 21 }}>🪡</div>
+                          placeItems: 'center', fontSize: 'calc(21px * var(--font-scale))' }}>🪡</div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 700, fontSize: 14 }} lang={lang}>
+              <div style={{ fontWeight: 700, fontSize: 'calc(14px * var(--font-scale))' }} lang={lang}>
                 {t('पवन सहायक से पूछिए', 'Ask the PAVHAN assistant')}
               </div>
-              <div className="muted" style={{ fontSize: 11.5, marginTop: 2 }} lang={lang}>
+              <div className="muted" style={{ fontSize: 'calc(11.5px * var(--font-scale))', marginTop: 2 }} lang={lang}>
                 {t('दाम, कमाई, फोटो — कुछ भी पूछिए', 'Prices, earnings, photos — ask anything')}
               </div>
             </div>
@@ -143,10 +143,10 @@ export default function ArtisanHome() {
             <div className="card tinted fade-up">
               <div className="row-between">
                 <div>
-                  <div style={{ fontWeight: 700, fontSize: 14 }} lang={lang}>
+                  <div style={{ fontWeight: 700, fontSize: 'calc(14px * var(--font-scale))' }} lang={lang}>
                     {t('अभी बाज़ार कैसा है', "This month's market")}
                   </div>
-                  <div className="muted" style={{ fontSize: 11.5, marginTop: 2 }}>
+                  <div className="muted" style={{ fontSize: 'calc(11.5px * var(--font-scale))', marginTop: 2 }}>
                     {market.season_label}
                   </div>
                 </div>
@@ -158,7 +158,7 @@ export default function ArtisanHome() {
                   tone="var(--marigold)"
                 />
               </div>
-              <div className="muted" style={{ fontSize: 11, marginTop: 7, lineHeight: 1.5 }} lang={lang}>
+              <div className="muted" style={{ fontSize: 'calc(11px * var(--font-scale))', marginTop: 7, lineHeight: 1.5 }} lang={lang}>
                 {market.demand_index >= 1.05
                   ? t('माँग ऊपर है — अभी सामान डालने का सही समय है।',
                        'Demand is up — this is a good month to list.')
@@ -180,10 +180,10 @@ export default function ArtisanHome() {
               </div>
               {enquiries.slice(0, 2).map((e) => (
                 <div key={e.id} className="card row fade-up" style={{ gap: 11 }}>
-                  <div style={{ fontSize: 24 }}>{e.buyer.logo}</div>
+                  <div style={{ fontSize: 'calc(24px * var(--font-scale))' }}>{e.buyer.logo}</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 700, fontSize: 13.5 }}>{e.buyer.name}</div>
-                    <div className="muted" style={{ fontSize: 11.5 }}>
+                    <div style={{ fontWeight: 700, fontSize: 'calc(13.5px * var(--font-scale))' }}>{e.buyer.name}</div>
+                    <div className="muted" style={{ fontSize: 'calc(11.5px * var(--font-scale))' }}>
                       {e.quantity} × {e.product.title.slice(0, 26)}…
                     </div>
                   </div>
@@ -192,6 +192,25 @@ export default function ArtisanHome() {
               ))}
             </div>
           )}
+
+          {/* The four things an artisan does between listings. */}
+          <div className="grid-2">
+            {[
+              ['/requirements', '📋', t('खरीदारों की माँग', 'Buyer requirements')],
+              ['/artisan/buyers', '🤝', t('मेल खाते खरीदार', 'Matched buyers')],
+              ['/fairs', '🎪', t('मेला मोड', 'Fair mode')],
+              ['/impact', '🏛️', t('योजना का असर', 'Scheme impact')],
+            ].map(([to, icon, label]) => (
+              <button key={to} className="card fade-up" onClick={() => navigate(to)}
+                      style={{ textAlign: 'left', padding: '13px 12px' }}>
+                <div style={{ fontSize: 'calc(21px * var(--font-scale))' }}>{icon}</div>
+                <div style={{ fontWeight: 700, fontSize: 'calc(12.5px * var(--font-scale))', marginTop: 6, lineHeight: 1.35 }}
+                     lang={lang}>
+                  {label}
+                </div>
+              </button>
+            ))}
+          </div>
 
           <div className="row-between" style={{ marginTop: 4 }}>
             <div className="section-title" lang={lang}>{t('आपका सामान', 'Your products')}</div>
@@ -211,8 +230,8 @@ export default function ArtisanHome() {
                 >
                   <ScoreRing value={p.quality_score} size={46} label={t('गुण', 'quality')} />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 700, fontSize: 13.5, lineHeight: 1.3 }}>{p.title}</div>
-                    <div className="muted" style={{ fontSize: 11.5, marginTop: 3 }}>
+                    <div style={{ fontWeight: 700, fontSize: 'calc(13.5px * var(--font-scale))', lineHeight: 1.3 }}>{p.title}</div>
+                    <div className="muted" style={{ fontSize: 'calc(11.5px * var(--font-scale))', marginTop: 3 }}>
                       👁 {p.views} · <Money value={p.price} />
                     </div>
                   </div>
@@ -235,7 +254,7 @@ export default function ArtisanHome() {
 
           {tips.length > 0 && (
             <div className="card tinted fade-up">
-              <div style={{ fontWeight: 700, fontSize: 13.5, marginBottom: 8 }} lang={lang}>
+              <div style={{ fontWeight: 700, fontSize: 'calc(13.5px * var(--font-scale))', marginBottom: 8 }} lang={lang}>
                 💡 {t('ज़्यादा बेचने के लिए', 'To sell more')}
               </div>
               <div className="stack" style={{ gap: 8 }}>
@@ -245,7 +264,7 @@ export default function ArtisanHome() {
                     onClick={() => sayRaw(tip)}
                     style={{
                       background: 'none', border: 0, padding: 0, textAlign: 'left',
-                      fontSize: 12.5, lineHeight: 1.55, color: 'var(--ink-soft)',
+                      fontSize: 'calc(12.5px * var(--font-scale))', lineHeight: 1.55, color: 'var(--ink-soft)',
                       display: 'flex', gap: 7,
                     }}
                     lang={lang}

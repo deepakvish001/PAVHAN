@@ -110,6 +110,36 @@ export const exportDownloadUrl = (id, format) =>
   `/api/export/${id}?format=${format}&download=true`
 export const bulkCatalogueUrl = (artisanId) => `/api/export/bulk/artisan/${artisanId}`
 
+// --- MoSJE scheme impact -------------------------------------------------
+export const schemeList = () => api.get('/api/impact/schemes')
+export const linkScheme = (artisanId, payload) =>
+  api.post(`/api/impact/artisan/${artisanId}/link`, payload)
+export const artisanImpact = (artisanId) => api.get(`/api/impact/artisan/${artisanId}`)
+export const ministryReport = () => api.get('/api/impact/ministry')
+export const ministryCsvUrl = () => '/api/impact/ministry.csv'
+
+// --- physical fairs ------------------------------------------------------
+export const listFairs = () => api.get('/api/fairs')
+export const createStall = (payload) => api.post('/api/fairs/stall', payload)
+export const artisanStalls = (artisanId) => api.get(`/api/fairs/artisan/${artisanId}/stalls`)
+export const stallStorefront = (code, follow = false) =>
+  api.get(`/api/fairs/stall/${code}`, { follow })
+export const stallPerformance = (code) => api.get(`/api/fairs/stall/${code}/performance`)
+
+// --- two-way B2B ---------------------------------------------------------
+export const listRequirements = (artisanId) =>
+  api.get('/api/trade/requirements', { artisan_id: artisanId })
+export const getRequirement = (id) => api.get(`/api/trade/requirements/${id}`)
+export const createRequirement = (payload) => api.post('/api/trade/requirements', payload)
+export const sendQuote = (payload) => api.post('/api/trade/quotes', payload)
+export const artisanQuotes = (id) => api.get(`/api/trade/quotes/artisan/${id}`)
+export const acceptQuote = (id) => api.post(`/api/trade/quotes/${id}/accept`)
+
+// --- orders --------------------------------------------------------------
+export const artisanOrders = (id) => api.get(`/api/trade/orders/artisan/${id}`)
+export const advanceOrder = (id, to) =>
+  api.post(`/api/trade/orders/${id}/advance${qsPublic({ to })}`)
+
 // --- AI Product Studio ---------------------------------------------------
 export const studioStatus = () => api.get('/api/studio/status')
 export const enhancePhoto = (file, background = 'white') =>

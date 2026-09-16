@@ -14,7 +14,7 @@ export function Loading({ label }) {
   return (
     <div className="center" style={{ padding: '46px 18px', color: 'var(--muted)' }}>
       <div className="spinner dark" style={{ margin: '0 auto 12px' }} />
-      <div style={{ fontSize: 13.5 }}>{label || t('एक पल…', 'One moment…')}</div>
+      <div style={{ fontSize: 'calc(13.5px * var(--font-scale))' }}>{label || t('एक पल…', 'One moment…')}</div>
     </div>
   )
 }
@@ -35,12 +35,12 @@ export function SkeletonCard() {
 export function Empty({ icon = '🪡', title, body, action }) {
   return (
     <div className="center" style={{ padding: '48px 22px' }}>
-      <div style={{ fontSize: 44, marginBottom: 10, animation: 'floaty 3.4s ease-in-out infinite' }}>
+      <div style={{ fontSize: 'calc(44px * var(--font-scale))', marginBottom: 10, animation: 'floaty 3.4s ease-in-out infinite' }}>
         {icon}
       </div>
-      <h3 style={{ fontSize: 17, marginBottom: 6 }}>{title}</h3>
+      <h3 style={{ fontSize: 'calc(17px * var(--font-scale))', marginBottom: 6 }}>{title}</h3>
       {body && (
-        <p className="muted" style={{ fontSize: 13.5, lineHeight: 1.6, margin: '0 0 16px' }}>
+        <p className="muted" style={{ fontSize: 'calc(13.5px * var(--font-scale))', lineHeight: 1.6, margin: '0 0 16px' }}>
           {body}
         </p>
       )}
@@ -54,10 +54,10 @@ export function ErrorNote({ error, onRetry }) {
   if (!error) return null
   return (
     <div className="card" style={{ borderColor: '#f0cbc6', background: '#fdf4f3' }}>
-      <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--madder-dark)', marginBottom: 4 }}>
+      <div style={{ fontWeight: 700, fontSize: 'calc(14px * var(--font-scale))', color: 'var(--madder-dark)', marginBottom: 4 }}>
         {t('कुछ गड़बड़ हुई', 'Something went wrong')}
       </div>
-      <div style={{ fontSize: 13, lineHeight: 1.55, color: 'var(--ink-soft)' }}>
+      <div style={{ fontSize: 'calc(13px * var(--font-scale))', lineHeight: 1.55, color: 'var(--ink-soft)' }}>
         {String(error.message || error)}
       </div>
       {onRetry && (
@@ -95,7 +95,7 @@ export function ScoreRing({ value, size = 54, label, tone }) {
         </div>
       </div>
       {label && (
-        <div style={{ fontSize: 9.5, marginTop: 4, color: 'var(--muted)', fontWeight: 700 }}>
+        <div style={{ fontSize: 'calc(9.5px * var(--font-scale))', marginTop: 4, color: 'var(--muted)', fontWeight: 700 }}>
           {label}
         </div>
       )}
@@ -131,7 +131,7 @@ export function Stepper({ steps, current }) {
           />
           <div
             style={{
-              fontSize: 9, marginTop: 5, fontWeight: 700, textAlign: 'center',
+              fontSize: 'calc(9px * var(--font-scale))', marginTop: 5, fontWeight: 700, textAlign: 'center',
               color: i === current ? 'var(--madder)' : 'var(--muted)',
               overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
             }}
@@ -192,10 +192,10 @@ export function ProductCard({ product, onClick, compact = false }) {
       >
         <ProductImage product={product} height={116} radius={0} style={{ width: '100%' }} />
         <div style={{ padding: '9px 10px 11px' }}>
-          <div style={{ fontSize: 12.5, fontWeight: 700, lineHeight: 1.35, minHeight: 34 }}>
+          <div style={{ fontSize: 'calc(12.5px * var(--font-scale))', fontWeight: 700, lineHeight: 1.35, minHeight: 34 }}>
             {product.title.length > 38 ? `${product.title.slice(0, 36)}…` : product.title}
           </div>
-          <div style={{ fontSize: 10.5, color: 'var(--muted)', margin: '3px 0 6px' }}>
+          <div style={{ fontSize: 'calc(10.5px * var(--font-scale))', color: 'var(--muted)', margin: '3px 0 6px' }}>
             {L(product.region)}
           </div>
           <Money value={product.price} className="" />
@@ -212,8 +212,8 @@ export function ProductCard({ product, onClick, compact = false }) {
     >
       <ProductImage product={product} height={86} style={{ width: 86 }} />
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <div style={{ fontWeight: 700, fontSize: 14.5, lineHeight: 1.3 }}>{product.title}</div>
-        <div style={{ fontSize: 11.5, color: 'var(--muted)' }}>
+        <div style={{ fontWeight: 700, fontSize: 'calc(14.5px * var(--font-scale))', lineHeight: 1.3 }}>{product.title}</div>
+        <div style={{ fontSize: 'calc(11.5px * var(--font-scale))', color: 'var(--muted)' }}>
           {L(product.craft_type)} · {L(product.region)}
         </div>
         <div className="row" style={{ gap: 6, flexWrap: 'wrap', marginTop: 'auto' }}>
@@ -254,7 +254,7 @@ export function VoiceOrb({ script, fields, text }) {
           className="fade-up"
           style={{
             position: 'absolute', right: 60, bottom: 8, background: 'var(--ink)', color: '#fff',
-            padding: '7px 11px', borderRadius: 11, fontSize: 11.5, whiteSpace: 'nowrap',
+            padding: '7px 11px', borderRadius: 11, fontSize: 'calc(11.5px * var(--font-scale))', whiteSpace: 'nowrap',
             boxShadow: 'var(--shadow-2)',
           }}
         >
@@ -266,7 +266,7 @@ export function VoiceOrb({ script, fields, text }) {
         aria-label={t('मदद सुनिए', 'Hear the guide')}
         style={{
           width: 50, height: 50, borderRadius: '50%', border: '3px solid var(--paper)',
-          background: voiceOn ? 'var(--ink)' : 'var(--muted)', color: '#fff', fontSize: 20,
+          background: voiceOn ? 'var(--ink)' : 'var(--muted)', color: '#fff', fontSize: 'calc(20px * var(--font-scale))',
           boxShadow: 'var(--shadow-2)',
           animation: assistant.speaking ? 'pulseRing 1.5s infinite' : 'none',
         }}

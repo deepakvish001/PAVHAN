@@ -78,7 +78,7 @@ export default function SearchPage() {
         <div className="page-tight stack" style={{ paddingTop: 14 }}>
           <div style={{ position: 'relative' }}>
             <div className="card row" style={{ gap: 9, padding: '10px 13px' }}>
-              <span style={{ fontSize: 15 }}>🔍</span>
+              <span style={{ fontSize: 'calc(15px * var(--font-scale))' }}>🔍</span>
               <input
                 ref={inputRef}
                 value={q}
@@ -86,12 +86,12 @@ export default function SearchPage() {
                 onChange={(e) => setQ(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && run()}
                 placeholder={t('हिंदी या अंग्रेज़ी में लिखिए…', 'Type in Hindi or English…')}
-                style={{ flex: 1, border: 0, outline: 0, background: 'none', fontSize: 14.5, minWidth: 0 }}
+                style={{ flex: 1, border: 0, outline: 0, background: 'none', fontSize: 'calc(14.5px * var(--font-scale))', minWidth: 0 }}
               />
               {q && (
                 <button
                   onClick={() => { setQ(''); run('') }}
-                  style={{ border: 0, background: 'none', color: 'var(--muted)', fontSize: 16 }}
+                  style={{ border: 0, background: 'none', color: 'var(--muted)', fontSize: 'calc(16px * var(--font-scale))' }}
                 >
                   ✕
                 </button>
@@ -101,7 +101,7 @@ export default function SearchPage() {
                 style={{
                   border: 0, borderRadius: 10, width: 34, height: 34,
                   background: mic.listening ? 'var(--madder)' : 'var(--paper-2)',
-                  color: mic.listening ? '#fff' : 'var(--ink)', fontSize: 15,
+                  color: mic.listening ? '#fff' : 'var(--ink)', fontSize: 'calc(15px * var(--font-scale))',
                   animation: mic.listening ? 'pulseRing 1.5s infinite' : 'none',
                 }}
                 aria-label={t('बोलकर खोजिए', 'Search by voice')}
@@ -121,7 +121,7 @@ export default function SearchPage() {
                     onClick={() => { const next = q.trim().split(/\s+/).slice(0, -1).concat(s).join(' '); setQ(next); run(next) }}
                     style={{
                       display: 'block', width: '100%', textAlign: 'left', border: 0,
-                      background: 'none', padding: '9px 10px', fontSize: 13.5, borderRadius: 9,
+                      background: 'none', padding: '9px 10px', fontSize: 'calc(13.5px * var(--font-scale))', borderRadius: 9,
                     }}
                   >
                     🔍 {s}
@@ -132,12 +132,12 @@ export default function SearchPage() {
           </div>
 
           {mic.listening && (
-            <div className="center muted" style={{ fontSize: 12 }} lang={lang}>
+            <div className="center muted" style={{ fontSize: 'calc(12px * var(--font-scale))' }} lang={lang}>
               {mic.interim || t('सुन रहा हूँ…', 'Listening…')}
             </div>
           )}
           {mic.error && (
-            <div className="muted center" style={{ fontSize: 11.5, lineHeight: 1.5 }} lang={lang}>
+            <div className="muted center" style={{ fontSize: 'calc(11.5px * var(--font-scale))', lineHeight: 1.5 }} lang={lang}>
               {mic.error}
             </div>
           )}
@@ -170,7 +170,7 @@ export default function SearchPage() {
               ].map(([key, label]) => (
                 (facets[key] || []).length > 0 && (
                   <div key={key}>
-                    <div style={{ fontSize: 11.5, fontWeight: 700, marginBottom: 6, color: 'var(--ink-soft)' }}>
+                    <div style={{ fontSize: 'calc(11.5px * var(--font-scale))', fontWeight: 700, marginBottom: 6, color: 'var(--ink-soft)' }}>
                       {label}
                     </div>
                     <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
@@ -178,7 +178,7 @@ export default function SearchPage() {
                         <button
                           key={f.value}
                           className={`chip ${filters[key] === f.value ? 'active' : ''}`}
-                          style={{ padding: '6px 11px', fontSize: 11.5 }}
+                          style={{ padding: '6px 11px', fontSize: 'calc(11.5px * var(--font-scale))' }}
                           onClick={() => applyFilter(key, f.value)}
                         >
                           {L(f.value)} <span className="muted">{f.count}</span>
@@ -191,7 +191,7 @@ export default function SearchPage() {
 
               {facets.price?.buckets?.length > 0 && (
                 <div>
-                  <div style={{ fontSize: 11.5, fontWeight: 700, marginBottom: 6, color: 'var(--ink-soft)' }}>
+                  <div style={{ fontSize: 'calc(11.5px * var(--font-scale))', fontWeight: 700, marginBottom: 6, color: 'var(--ink-soft)' }}>
                     {t('दाम', 'Price')}
                   </div>
                   <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
@@ -199,7 +199,7 @@ export default function SearchPage() {
                       <button
                         key={b.label}
                         className={`chip ${filters.min_price === b.min ? 'active' : ''}`}
-                        style={{ padding: '6px 11px', fontSize: 11.5 }}
+                        style={{ padding: '6px 11px', fontSize: 'calc(11.5px * var(--font-scale))' }}
                         onClick={() => {
                           const next = { ...filters }
                           if (next.min_price === b.min) { delete next.min_price; delete next.max_price }
@@ -234,7 +234,7 @@ export default function SearchPage() {
           )}
 
           {data && !loading && (
-            <div className="row-between muted" style={{ fontSize: 11.5 }}>
+            <div className="row-between muted" style={{ fontSize: 'calc(11.5px * var(--font-scale))' }}>
               <span>
                 {t(`${data.total} चीज़ें मिलीं`, `${data.total} results`)}
                 {data.query && ` · "${data.query}"`}
@@ -246,7 +246,7 @@ export default function SearchPage() {
           {data?.did_you_mean && (
             <button
               className="card"
-              style={{ textAlign: 'left', fontSize: 13, padding: '11px 13px' }}
+              style={{ textAlign: 'left', fontSize: 'calc(13px * var(--font-scale))', padding: '11px 13px' }}
               onClick={() => { setQ(data.did_you_mean); run(data.did_you_mean) }}
             >
               {t('क्या आपका मतलब ', 'Did you mean ')}

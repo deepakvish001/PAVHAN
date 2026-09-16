@@ -46,6 +46,22 @@ class User(Base):
     preferences: Mapped[dict] = mapped_column(JSON, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
 
+    # --- MoSJE scheme linkage -------------------------------------------
+    # The ministry funds these units and then loses sight of what happened to
+    # the beneficiary's income. Linking the scheme here is what lets real
+    # sales become the evidence of whether the assistance worked.
+    social_category: Mapped[str] = mapped_column(String(8), default="")
+    corporation: Mapped[str] = mapped_column(String(12), default="")
+    scheme_name: Mapped[str] = mapped_column(String(120), default="")
+    beneficiary_id: Mapped[str] = mapped_column(String(40), default="")
+    loan_amount: Mapped[float] = mapped_column(Float, default=0)
+    loan_date: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    # Monthly income before joining, as stated by the artisan. The honest
+    # baseline: self-declared, and labelled as such everywhere it is used.
+    baseline_monthly_income: Mapped[float] = mapped_column(Float, default=0)
+    shg_name: Mapped[str] = mapped_column(String(120), default="")
+    cluster: Mapped[str] = mapped_column(String(120), default="")
+
     products: Mapped[list[Product]] = relationship(back_populates="artisan")
 
 
@@ -152,6 +168,89 @@ class Enquiry(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
 
 
+class Exhibition(Base):
+    """A physical fair — the thing PAVHAN is meant to make artisans less
+    dependent on, by carrying its footfall into the rest of the year."""
+
+    __tablename__ = "exhibitions"
+
+    id: Mapped[str] = mapped_column(String(12), primary_key=True, default=_uid)
+    name: Mapped[str] = mapped_column(String(160))
+    name_hi: Mapped[str] = mapped_column(String(160), default="")
+    venue: Mapped[str] = mapped_column(String(160), default="")
+    city: Mapped[str] = mapped_column(String(80), default="")
+    organiser: Mapped[str] = mapped_column(String(160), default="")
+    starts_on: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    ends_on: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    annual_footfall: Mapped[int] = mapped_column(Integer, default=0)
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+
+
+class StallCard(Base):
+    """An artisan's stall at a fair, and the QR that outlives it.
+
+    A visitor who liked a piece at Surajkund has no way to find that weaver in
+    March. A scan here creates that link permanently.
+    """
+
+    __tablename__ = "stall_cards"
+
+    id: Mapped[str] = mapped_column(String(12), primary_key=True, default=_uid)
+    artisan_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    exhibition_id: Mapped[str | None] = mapped_column(
+        ForeignKey("exhibitions.id"), nullable=True, index=True)
+    code: Mapped[str] = mapped_column(String(16), unique=True, index=True)
+    stall_number: Mapped[str] = mapped_column(String(24), default="")
+    scans: Mapped[int] = mapped_column(Integer, default=0)
+    follows: Mapped[int] = mapped_column(Integer, default=0)
+    orders_after_fair: Mapped[int] = mapped_column(Integer, default=0)
+    revenue_after_fair: Mapped[float] = mapped_column(Float, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+
+
+class BuyerRequirement(Base):
+    """What a bulk buyer is looking for, posted so artisans can answer it."""
+
+    __tablename__ = "buyer_requirements"
+
+    id: Mapped[str] = mapped_column(String(12), primary_key=True, default=_uid)
+    buyer_id: Mapped[str] = mapped_column(ForeignKey("buyers.id"), index=True)
+    title: Mapped[str] = mapped_column(String(200))
+    description: Mapped[str] = mapped_column(Text, default="")
+    category: Mapped[str] = mapped_column(String(80), default="", index=True)
+    craft_type: Mapped[str] = mapped_column(String(80), default="")
+    material: Mapped[str] = mapped_column(String(80), default="")
+    quantity: Mapped[int] = mapped_column(Integer, default=1)
+    budget_min: Mapped[float] = mapped_column(Float, default=0)
+    budget_max: Mapped[float] = mapped_column(Float, default=0)
+    delivery_days: Mapped[int] = mapped_column(Integer, default=30)
+    preferred_regions: Mapped[list] = mapped_column(JSON, default=list)
+    status: Mapped[str] = mapped_column(String(20), default="open")
+    closes_on: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+
+
+class Quote(Base):
+    """An artisan's answer to a requirement: price, quantity, lead time."""
+
+    __tablename__ = "quotes"
+
+    id: Mapped[str] = mapped_column(String(12), primary_key=True, default=_uid)
+    requirement_id: Mapped[str] = mapped_column(
+        ForeignKey("buyer_requirements.id"), index=True)
+    artisan_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    product_id: Mapped[str | None] = mapped_column(
+        ForeignKey("products.id"), nullable=True)
+    unit_price: Mapped[float] = mapped_column(Float, default=0)
+    quantity: Mapped[int] = mapped_column(Integer, default=1)
+    lead_time_days: Mapped[int] = mapped_column(Integer, default=15)
+    message: Mapped[str] = mapped_column(Text, default="")
+    # sent | accepted | declined | countered
+    status: Mapped[str] = mapped_column(String(20), default="sent")
+    counter_price: Mapped[float] = mapped_column(Float, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+
+
 class Order(Base):
     """A retail order placed by a customer."""
 
@@ -164,4 +263,10 @@ class Order(Base):
     amount: Mapped[float] = mapped_column(Float, default=0)
     artisan_payout: Mapped[float] = mapped_column(Float, default=0)
     status: Mapped[str] = mapped_column(String(20), default="placed")
+    # Where the sale came from, so the fair bridge can prove it carried
+    # footfall into the rest of the year.
+    channel: Mapped[str] = mapped_column(String(20), default="retail")
+    stall_code: Mapped[str] = mapped_column(String(16), default="")
+    quote_id: Mapped[str | None] = mapped_column(ForeignKey("quotes.id"), nullable=True)
+    timeline: Mapped[list] = mapped_column(JSON, default=list)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)

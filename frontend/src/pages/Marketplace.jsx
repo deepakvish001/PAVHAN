@@ -44,12 +44,12 @@ export default function Marketplace() {
             className="card row"
             style={{ gap: 10, padding: '13px 15px', textAlign: 'left', color: 'var(--muted)' }}
           >
-            <span style={{ fontSize: 17 }}>🔍</span>
-            <span style={{ fontSize: 14 }} lang={lang}>
+            <span style={{ fontSize: 'calc(17px * var(--font-scale))' }}>🔍</span>
+            <span style={{ fontSize: 'calc(14px * var(--font-scale))' }} lang={lang}>
               {t('साड़ी, मिट्टी के बर्तन, गहने…', 'Saree, pottery, jewellery…')}
             </span>
             <span className="spacer" />
-            <span style={{ fontSize: 16 }}>🎤</span>
+            <span style={{ fontSize: 'calc(16px * var(--font-scale))' }}>🎤</span>
           </button>
 
           {stats && (
@@ -60,10 +60,10 @@ export default function Marketplace() {
                 [`${stats.artisan_share_percent}%`, t('कारीगर को जाता है', 'goes to the maker')],
               ].map(([n, label]) => (
                 <div key={label} style={{ flex: 1 }}>
-                  <div className="mono" style={{ fontSize: 17, fontWeight: 800, color: 'var(--madder)' }}>
+                  <div className="mono" style={{ fontSize: 'calc(17px * var(--font-scale))', fontWeight: 800, color: 'var(--madder)' }}>
                     {n}
                   </div>
-                  <div className="muted" style={{ fontSize: 9.5, textTransform: 'uppercase', lineHeight: 1.3 }}>
+                  <div className="muted" style={{ fontSize: 'calc(9.5px * var(--font-scale))', textTransform: 'uppercase', lineHeight: 1.3 }}>
                     {label}
                   </div>
                 </div>

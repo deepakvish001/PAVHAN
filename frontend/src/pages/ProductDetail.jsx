@@ -71,17 +71,17 @@ export default function ProductDetail() {
               <span className="pill">{product.category}</span>
               {product.handmade && <span className="pill gold">✋ {t('हस्तनिर्मित', 'Handmade')}</span>}
             </div>
-            <h2 style={{ fontSize: 20, lineHeight: 1.28 }}>{product.title}</h2>
-            <p className="muted" style={{ fontSize: 13, lineHeight: 1.6, margin: '8px 0 0' }}>
+            <h2 style={{ fontSize: 'calc(20px * var(--font-scale))', lineHeight: 1.28 }}>{product.title}</h2>
+            <p className="muted" style={{ fontSize: 'calc(13px * var(--font-scale))', lineHeight: 1.6, margin: '8px 0 0' }}>
               {product.short_description}
             </p>
             <div className="row-between" style={{ marginTop: 14 }}>
               <div>
-                <div className="mono" style={{ fontSize: 25, fontWeight: 800, color: 'var(--madder)' }}>
+                <div className="mono" style={{ fontSize: 'calc(25px * var(--font-scale))', fontWeight: 800, color: 'var(--madder)' }}>
                   {rupees(unit * qty)}
                 </div>
                 {isB2B && unit < product.price && (
-                  <div className="muted" style={{ fontSize: 11 }}>
+                  <div className="muted" style={{ fontSize: 'calc(11px * var(--font-scale))' }}>
                     {rupees(unit)} × {qty} · {t('थोक छूट लागू', 'bulk rate applied')}
                   </div>
                 )}
@@ -94,16 +94,16 @@ export default function ProductDetail() {
           <div className="card" style={{ background: 'var(--leaf-soft)', borderColor: '#bcdbd1' }}>
             <div className="row-between">
               <div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: '#145244' }} lang={lang}>
+                <div style={{ fontSize: 'calc(12px * var(--font-scale))', fontWeight: 700, color: '#145244' }} lang={lang}>
                   {t('कारीगर को मिलेगा', 'The artisan receives')}
                 </div>
-                <div className="mono" style={{ fontSize: 21, fontWeight: 800, color: '#145244', marginTop: 3 }}>
+                <div className="mono" style={{ fontSize: 'calc(21px * var(--font-scale))', fontWeight: 800, color: '#145244', marginTop: 3 }}>
                   {rupees(unit * qty * 0.95)}
                 </div>
               </div>
               <div className="center">
-                <div className="mono" style={{ fontSize: 19, fontWeight: 800, color: '#145244' }}>95%</div>
-                <div style={{ fontSize: 9, color: '#3d7a68', textTransform: 'uppercase' }}>
+                <div className="mono" style={{ fontSize: 'calc(19px * var(--font-scale))', fontWeight: 800, color: '#145244' }}>95%</div>
+                <div style={{ fontSize: 'calc(9px * var(--font-scale))', color: '#3d7a68', textTransform: 'uppercase' }}>
                   {t('हर रुपये का', 'of every rupee')}
                 </div>
               </div>
@@ -112,20 +112,20 @@ export default function ProductDetail() {
 
           {product.story && (
             <div className="card tinted">
-              <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 6 }} lang={lang}>
+              <div style={{ fontWeight: 700, fontSize: 'calc(13px * var(--font-scale))', marginBottom: 6 }} lang={lang}>
                 📖 {t('इसकी कहानी', 'The story')}
               </div>
-              <div style={{ fontSize: 13, lineHeight: 1.7, color: 'var(--ink-soft)' }}>
+              <div style={{ fontSize: 'calc(13px * var(--font-scale))', lineHeight: 1.7, color: 'var(--ink-soft)' }}>
                 {product.story}
               </div>
             </div>
           )}
 
           <div className="card">
-            <div style={{ fontWeight: 700, fontSize: 13.5, marginBottom: 10 }} lang={lang}>
+            <div style={{ fontWeight: 700, fontSize: 'calc(13.5px * var(--font-scale))', marginBottom: 10 }} lang={lang}>
               {t('पूरा विवरण', 'Details')}
             </div>
-            <p style={{ fontSize: 13, lineHeight: 1.7, margin: '0 0 12px', color: 'var(--ink-soft)' }}>
+            <p style={{ fontSize: 'calc(13px * var(--font-scale))', lineHeight: 1.7, margin: '0 0 12px', color: 'var(--ink-soft)' }}>
               {product.detailed_description}
             </p>
             {[
@@ -142,7 +142,7 @@ export default function ProductDetail() {
               <div
                 key={label}
                 className="row-between"
-                style={{ fontSize: 12.5, padding: '7px 0', borderTop: '1px solid var(--line)' }}
+                style={{ fontSize: 'calc(12.5px * var(--font-scale))', padding: '7px 0', borderTop: '1px solid var(--line)' }}
               >
                 <span className="muted">{label}</span>
                 <span style={{ fontWeight: 600, textAlign: 'right', maxWidth: '62%' }}>{value}</span>
@@ -153,7 +153,7 @@ export default function ProductDetail() {
           {product.sustainability_score > 0 && (
             <div className="card">
               <div className="row-between" style={{ marginBottom: 7 }}>
-                <span style={{ fontWeight: 700, fontSize: 13 }} lang={lang}>
+                <span style={{ fontWeight: 700, fontSize: 'calc(13px * var(--font-scale))' }} lang={lang}>
                   🌱 {t('पर्यावरण अंक', 'Sustainability')}
                 </span>
                 <span className="mono pill leaf">{product.sustainability_score}/100</span>
@@ -164,11 +164,11 @@ export default function ProductDetail() {
 
           {pm.comparables?.length > 0 && (
             <div className="card">
-              <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 9 }} lang={lang}>
+              <div style={{ fontWeight: 700, fontSize: 'calc(13px * var(--font-scale))', marginBottom: 9 }} lang={lang}>
                 {t('यही चीज़ और जगह', 'The same piece elsewhere')}
               </div>
               {pm.comparables.slice(0, 3).map((c) => (
-                <div key={c.label} className="row-between" style={{ fontSize: 12, padding: '5px 0' }}>
+                <div key={c.label} className="row-between" style={{ fontSize: 'calc(12px * var(--font-scale))', padding: '5px 0' }}>
                   <span className="muted" lang={lang}>{lang === 'hi' ? c.label_hi || c.label : c.label}</span>
                   <span className="mono" style={{ fontWeight: 700 }}>{rupees(c.price)}</span>
                 </div>
@@ -178,7 +178,7 @@ export default function ProductDetail() {
 
           {isB2B && (
             <div className="card">
-              <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 9 }} lang={lang}>
+              <div style={{ fontWeight: 700, fontSize: 'calc(13px * var(--font-scale))', marginBottom: 9 }} lang={lang}>
                 {t('कितने चाहिए?', 'How many?')}
               </div>
               <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>

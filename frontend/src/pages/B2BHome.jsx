@@ -63,11 +63,11 @@ export default function B2BHome() {
                     borderWidth: active?.id === b.id ? 2 : 1,
                   }}
                 >
-                  <div style={{ fontSize: 21 }}>{b.logo}</div>
-                  <div style={{ fontWeight: 700, fontSize: 12.5, marginTop: 5, lineHeight: 1.3 }}>
+                  <div style={{ fontSize: 'calc(21px * var(--font-scale))' }}>{b.logo}</div>
+                  <div style={{ fontWeight: 700, fontSize: 'calc(12.5px * var(--font-scale))', marginTop: 5, lineHeight: 1.3 }}>
                     {b.name}
                   </div>
-                  <div className="muted" style={{ fontSize: 10, marginTop: 3 }}>
+                  <div className="muted" style={{ fontSize: 'calc(10px * var(--font-scale))', marginTop: 3 }}>
                     {L(b.org_type)} · {L(b.city)}
                   </div>
                 </button>
@@ -77,10 +77,10 @@ export default function B2BHome() {
 
           {active && (
             <div className="card tinted">
-              <div style={{ fontWeight: 700, fontSize: 13.5, marginBottom: 8 }}>
+              <div style={{ fontWeight: 700, fontSize: 'calc(13.5px * var(--font-scale))', marginBottom: 8 }}>
                 {active.logo} {active.name}
               </div>
-              <p className="muted" style={{ fontSize: 12, lineHeight: 1.6, margin: '0 0 11px' }}>
+              <p className="muted" style={{ fontSize: 'calc(12px * var(--font-scale))', lineHeight: 1.6, margin: '0 0 11px' }}>
                 {active.notes}
               </p>
               {[
@@ -95,7 +95,7 @@ export default function B2BHome() {
                 <div
                   key={label}
                   className="row-between"
-                  style={{ fontSize: 12, padding: '6px 0', borderTop: '1px solid var(--line)' }}
+                  style={{ fontSize: 'calc(12px * var(--font-scale))', padding: '6px 0', borderTop: '1px solid var(--line)' }}
                 >
                   <span className="muted">{label}</span>
                   <span style={{ fontWeight: 600, textAlign: 'right', maxWidth: '60%' }}>{value}</span>
@@ -103,13 +103,13 @@ export default function B2BHome() {
               ))}
               <div className="row" style={{ gap: 12, marginTop: 11 }}>
                 <div style={{ flex: 1 }}>
-                  <div className="muted" style={{ fontSize: 10, marginBottom: 4 }}>
+                  <div className="muted" style={{ fontSize: 'calc(10px * var(--font-scale))', marginBottom: 4 }}>
                     🌱 {t('पर्यावरण को महत्व', 'Sustainability weight')}
                   </div>
                   <Bar value={active.values_sustainability} tone="var(--leaf)" height={5} />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div className="muted" style={{ fontSize: 10, marginBottom: 4 }}>
+                  <div className="muted" style={{ fontSize: 'calc(10px * var(--font-scale))', marginBottom: 4 }}>
                     🏅 {t('जीआई को महत्व', 'GI weight')}
                   </div>
                   <Bar value={active.values_gi_tag} tone="var(--marigold)" height={5} />
@@ -141,8 +141,8 @@ export default function B2BHome() {
               >
                 <ProductImage product={{ images: [r.image] }} height={74} style={{ width: 74 }} />
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 700, fontSize: 13.5, lineHeight: 1.3 }}>{r.title}</div>
-                  <div className="muted" style={{ fontSize: 11, margin: '3px 0 6px' }}>
+                  <div style={{ fontWeight: 700, fontSize: 'calc(13.5px * var(--font-scale))', lineHeight: 1.3 }}>{r.title}</div>
+                  <div className="muted" style={{ fontSize: 'calc(11px * var(--font-scale))', margin: '3px 0 6px' }}>
                     {L(r.craft_type)} · {L(r.region)} · MOQ {r.moq}
                   </div>
                   <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
@@ -154,13 +154,13 @@ export default function B2BHome() {
                   <div
                     className="mono"
                     style={{
-                      fontSize: 16, fontWeight: 800,
+                      fontSize: 'calc(16px * var(--font-scale))', fontWeight: 800,
                       color: r.score >= 82 ? 'var(--leaf)' : r.score >= 68 ? 'var(--marigold)' : 'var(--muted)',
                     }}
                   >
                     {r.score}
                   </div>
-                  <div className="muted" style={{ fontSize: 8.5, textTransform: 'uppercase' }}>
+                  <div className="muted" style={{ fontSize: 'calc(8.5px * var(--font-scale))', textTransform: 'uppercase' }}>
                     {t('मेल', 'fit')}
                   </div>
                 </div>

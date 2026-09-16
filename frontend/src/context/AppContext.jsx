@@ -17,6 +17,8 @@ export function AppProvider({ children }) {
   const saved = loadSession()
   const [role, setRole] = useState(saved?.role || null)
   const [theme, setTheme] = useState(saved?.theme || 'light')
+  const [fontScale, setFontScale] = useState(saved?.fontScale || 1)
+  const [contrast, setContrast] = useState(saved?.contrast || 'normal')
   const [token, setToken] = useState(saved?.token || null)
   const [lang, setLang] = useState(saved?.lang || 'hi')
   const [voiceOn, setVoiceOn] = useState(saved?.voiceOn ?? true)
@@ -31,9 +33,9 @@ export function AppProvider({ children }) {
 
   useEffect(() => {
     try {
-      localStorage.setItem(STORE_KEY, JSON.stringify({ role, lang, voiceOn, user, theme, token }))
+      localStorage.setItem(STORE_KEY, JSON.stringify({ role, lang, voiceOn, user, theme, token, fontScale, contrast }))
     } catch { /* private mode; the app still works, it just forgets */ }
-  }, [role, lang, voiceOn, user, theme, token])
+  }, [role, lang, voiceOn, user, theme, token, fontScale, contrast])
 
   // Pull every script up front so the guide can speak with no round trip.
   useEffect(() => {
@@ -103,6 +105,13 @@ export function AppProvider({ children }) {
 
   // The theme lives on <html> so CSS variables cascade over everything,
   // including portals and the scrollbar.
+  useEffect(() => {
+    // Both live on <html> so every CSS variable cascades, including into the
+    // scrollbar and any portal.
+    document.documentElement.style.setProperty('--font-scale', String(fontScale))
+    document.documentElement.setAttribute('data-contrast', contrast)
+  }, [fontScale, contrast])
+
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
     const meta = document.querySelector('meta[name="theme-color"]')
@@ -174,6 +183,7 @@ export function AppProvider({ children }) {
     role, setRole,
     lang, setLang,
     theme, setTheme, toggleTheme,
+    fontScale, setFontScale, contrast, setContrast,
     token, setToken,
     voiceOn, setVoiceOn,
     user, setUser,
@@ -184,8 +194,9 @@ export function AppProvider({ children }) {
     say, sayRaw, sayProtected, cancelUnlessProtected,
     toast, toasts,
     t: (hi, en) => (lang === 'hi' ? hi : en),
-  }), [role, lang, voiceOn, user, theme, token, toggleTheme, scripts, labels, L,
-       pwa, assistant, say, sayRaw, sayProtected, cancelUnlessProtected, toast, toasts])
+  }), [role, lang, voiceOn, user, theme, token, toggleTheme, fontScale, contrast,
+       scripts, labels, L, pwa, assistant, say, sayRaw, sayProtected,
+       cancelUnlessProtected, toast, toasts])
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>
 }

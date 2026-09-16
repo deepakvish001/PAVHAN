@@ -82,6 +82,85 @@
   color-scheme: dark;
 }
 
+/* ------------------------------------------------------ accessibility
+   MoSJE's beneficiaries include Divyangjan, and the problem statement asks
+   for accessible layouts in as many words. Three things carry most of the
+   benefit: text that can be enlarged without the layout collapsing, a
+   high-contrast palette, and visible focus. */
+:root {
+  --font-scale: 1;
+}
+
+html { font-size: calc(16px * var(--font-scale)); }
+
+/* Scaling the root alone is not enough here. This interface sets most of its
+   type in explicit pixels — in theme.css and in the screens' own styles — and
+   a pixel does not care what the root font-size is, so a root-only scale
+   enlarged body copy and left every button, label, chip and nav item exactly
+   where it was. Every declared size therefore carries the multiplier itself:
+   `calc(Npx * var(--font-scale))`. One custom property, set once on the root,
+   moves the whole interface. */
+
+:root[data-contrast='high'] {
+  --ink: #000000;
+  --ink-2: #14142b;
+  --ink-soft: #1a1a1a;
+  --paper: #ffffff;
+  --paper-2: #f2f2f2;
+  --card: #ffffff;
+  --line: #000000;
+  --muted: #3a3a3a;
+  --madder: #9e1b0c;
+  --marigold: #8a5a00;
+  --marigold-soft: #fff0cc;
+  --indigo: #10307a;
+  --leaf: #0c5c45;
+  --leaf-soft: #ddf2ea;
+}
+:root[data-contrast='high'][data-theme='dark'] {
+  --ink: #ffffff;
+  --ink-soft: #f2f2f2;
+  --paper: #000000;
+  --paper-2: #16161a;
+  --card: #0a0a0d;
+  --line: #ffffff;
+  --muted: #d4d4d4;
+  --madder: #ff8a7a;
+  --marigold: #ffc65c;
+  --indigo: #9fb8ff;
+  --leaf: #6fe0bf;
+}
+:root[data-contrast='high'] .card,
+:root[data-contrast='high'] .input,
+:root[data-contrast='high'] .textarea,
+:root[data-contrast='high'] .chip { border-width: 2px; }
+:root[data-contrast='high'] .muted { color: var(--muted); }
+
+/* Focus must be visible for anyone navigating by keyboard or switch. */
+:where(a, button, input, textarea, select, [tabindex]):focus-visible {
+  outline: 3px solid var(--indigo);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.skip-link {
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%, -200%);
+  z-index: 300;
+  background: var(--ink);
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: 0 0 12px 12px;
+  font-size: calc(13px * var(--font-scale));
+  font-weight: 700;
+  transition: transform 0.15s;
+}
+.skip-link:focus { transform: translate(-50%, 0); }
+
+/* Touch targets. A 44px minimum is the floor for a shaking hand on a bus. */
+.btn, .chip, .topbar-btn, .bottomnav button { min-height: 44px; }
+
 * { box-sizing: border-box; }
 
 html, body {
@@ -190,8 +269,8 @@ h1, h2, h3, h4 {
   gap: 12px;
   box-shadow: var(--shadow-1);
 }
-.topbar h1 { font-size: 17px; color: #fff; flex: 1; }
-.topbar .sub { font-size: 11.5px; color: #b6bdd8; font-family: var(--font-ui); font-weight: 500; }
+.topbar h1 { font-size: calc(17px * var(--font-scale)); color: #fff; flex: 1; }
+.topbar .sub { font-size: calc(11.5px * var(--font-scale)); color: #b6bdd8; font-family: var(--font-ui); font-weight: 500; }
 .topbar-btn {
   background: rgba(255, 255, 255, 0.12);
   border: 0;
@@ -199,7 +278,7 @@ h1, h2, h3, h4 {
   width: 36px; height: 36px;
   border-radius: 11px;
   display: grid; place-items: center;
-  font-size: 16px;
+  font-size: calc(16px * var(--font-scale));
   transition: background 0.15s;
 }
 .topbar-btn:hover { background: rgba(255, 255, 255, 0.22); }
@@ -227,13 +306,13 @@ h1, h2, h3, h4 {
   align-items: center;
   justify-content: center;
   gap: 3px;
-  font-size: 10.5px;
+  font-size: calc(10.5px * var(--font-scale));
   font-weight: 600;
   color: var(--muted);
   padding: 0;
   transition: color 0.15s;
 }
-.bottomnav button .ico { font-size: 19px; line-height: 1; }
+.bottomnav button .ico { font-size: calc(19px * var(--font-scale)); line-height: 1; }
 .bottomnav button.active { color: var(--madder); }
 .bottomnav button.primary .ico {
   background: var(--madder);
@@ -257,11 +336,11 @@ h1, h2, h3, h4 {
 
 .section-title {
   font-family: var(--font-display);
-  font-size: 18px;
+  font-size: calc(18px * var(--font-scale));
   font-weight: 700;
   margin: 4px 0 2px;
 }
-.section-sub { font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+.section-sub { font-size: calc(12.5px * var(--font-scale)); color: var(--muted); line-height: 1.5; }
 
 /* -------------------------------------------------------------- cards */
 .card {
@@ -280,7 +359,7 @@ h1, h2, h3, h4 {
   border-radius: 14px;
   padding: 14px 18px;
   font-weight: 700;
-  font-size: 15px;
+  font-size: calc(15px * var(--font-scale));
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -295,7 +374,7 @@ h1, h2, h3, h4 {
 .btn-ghost { background: transparent; border: 1.5px solid var(--line); color: var(--ink); }
 .btn-soft { background: var(--paper-2); color: var(--ink); border: 1px solid var(--line); }
 .btn-block { width: 100%; }
-.btn-sm { padding: 9px 13px; font-size: 13px; border-radius: 11px; }
+.btn-sm { padding: 9px 13px; font-size: calc(13px * var(--font-scale)); border-radius: 11px; }
 
 /* --------------------------------------------------------------- pill */
 .pill {
@@ -304,7 +383,7 @@ h1, h2, h3, h4 {
   gap: 5px;
   padding: 5px 10px;
   border-radius: 999px;
-  font-size: 11.5px;
+  font-size: calc(11.5px * var(--font-scale));
   font-weight: 700;
   background: var(--paper-2);
   color: var(--ink-soft);
@@ -323,7 +402,7 @@ h1, h2, h3, h4 {
   background: #fff;
   border-radius: 999px;
   padding: 8px 14px;
-  font-size: 12.5px;
+  font-size: calc(12.5px * var(--font-scale));
   font-weight: 600;
   white-space: nowrap;
   color: var(--ink-soft);
@@ -332,14 +411,14 @@ h1, h2, h3, h4 {
 
 /* -------------------------------------------------------------- forms */
 .field { display: flex; flex-direction: column; gap: 6px; }
-.field label { font-size: 12px; font-weight: 700; color: var(--ink-soft); }
+.field label { font-size: calc(12px * var(--font-scale)); font-weight: 700; color: var(--ink-soft); }
 .input, .textarea, .select {
   width: 100%;
   border: 1.5px solid var(--line);
   border-radius: 12px;
   padding: 12px 13px;
   background: #fff;
-  font-size: 14.5px;
+  font-size: calc(14.5px * var(--font-scale));
   outline: none;
   transition: border-color 0.15s, box-shadow 0.15s;
 }
@@ -399,7 +478,7 @@ h1, h2, h3, h4 {
   color: #fff;
   border-radius: 13px;
   padding: 12px 15px;
-  font-size: 13.5px;
+  font-size: calc(13.5px * var(--font-scale));
   font-weight: 500;
   box-shadow: var(--shadow-2);
   animation: fadeUp 0.25s both;

@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..models import Enquiry, Order, Product, User
-from ..schemas import OrderCreate, UserCreate, UserOut
+from ..schemas import OrderCreate, UserCreate, UserOut, UserUpdate
 
 router = APIRouter(prefix="/api", tags=["users"])
 
@@ -37,6 +37,19 @@ def get_user(user_id: str, db: Session = Depends(get_db)) -> User:
     user = db.get(User, user_id)
     if not user:
         raise HTTPException(404, "User not found")
+    return user
+
+
+@router.patch("/users/{user_id}", response_model=UserOut)
+def update_user(user_id: str, payload: UserUpdate,
+                db: Session = Depends(get_db)) -> User:
+    user = db.get(User, user_id)
+    if not user:
+        raise HTTPException(404, "User not found")
+    for key, value in payload.model_dump(exclude_unset=True).items():
+        setattr(user, key, value)
+    db.commit()
+    db.refresh(user)
     return user
 
 

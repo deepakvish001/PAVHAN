@@ -70,6 +70,19 @@ def get_product(product_id: str, db: Session = Depends(get_db)) -> Product:
 def create_product(payload: ProductCreate, db: Session = Depends(get_db)) -> Product:
     if payload.artisan_id and not db.get(User, payload.artisan_id):
         raise HTTPException(400, "Unknown artisan_id")
+
+    # A listing catalogued with no signal waits in the phone's outbox and is
+    # sent when the signal returns. That send can be interrupted after the
+    # server has committed but before the phone hears the reply — over a 2G
+    # connection it regularly is — and the phone will then retry. Returning
+    # the listing that already exists, rather than making a second one, is
+    # what stops an artisan waking up to two of the same piece.
+    if payload.client_ref:
+        existing = db.scalars(select(Product).where(
+            Product.client_ref == payload.client_ref)).first()
+        if existing:
+            return existing
+
     product = Product(**payload.model_dump())
     db.add(product)
     db.commit()

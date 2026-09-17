@@ -26,6 +26,9 @@ a ranked list of real buyers with a message already written to each one.
 | 7 | Stands at a physical fair | **Fair mode**: a printable QR for the stall that turns a walk-past visitor into a follower and a repeat customer after the fair has packed up |
 | 8 | Answers a bulk enquiry | Buyer requirements ranked against *their* catalogue, a quote sheet with the margin shown, and an accepted quote that becomes a tracked order |
 | 9 | Proves it worked | A scheme-linked impact record the artisan owns, and a ministry-level report that aggregates it without ever inventing a number |
+| 10 | Gets paid | A `upi://pay` link that opens the buyer's own GPay or PhonePe with the artisan's VPA already filled in, and money **held until delivery** so neither side has to trust the other first |
+| 11 | Sends the piece | Only the carriers that actually serve that pincode, priced at real slabs — India Post first, because it is the one that reaches the village |
+| 12 | Has no signal at all | Records the photo and the voice note anyway. The outbox holds them and sends itself the moment a tower appears |
 
 A voice guide speaks every screen out loud, in Hindi, from the first second the
 app opens — because an artisan listing a product for the first time needs
@@ -77,7 +80,7 @@ Other modes:
 ```bash
 ./run.sh dev        # two ports with hot reload: API :8000, app :5173
 ./run.sh backend    # API only
-./run.sh test       # 118-check API smoke test against a running server
+./run.sh test       # 165-check API smoke test against a running server
 ```
 
 ### Optional: connect Claude
@@ -104,6 +107,8 @@ The app header and Profile screen always show which engines are live.
 │  Marketplace · search · product detail · B2B sourcing · dashboard          │
 │  Requirements → quote → order book · fair mode + stall storefront          │
 │  Impact: the artisan's own record, and the ministry's aggregate            │
+│  Earnings · payment link · despatch + tracking · pooling · outbox          │
+│  lib/outbox.js  IndexedDB capture queue, visible, idempotent on replay     │
 │  useSpeechRecognition  (mic, level meter, auto-restart, mapped errors)      │
 │  useVoiceAssistant     (Hindi TTS, voice selection, autoplay unlock)        │
 └────────────────────────────────┬───────────────────────────────────────────┘
@@ -122,6 +127,10 @@ The app header and Profile screen always show which engines are live.
 │  services/schemes.py     MoSJE corporations, schemes, instalment arithmetic  │
 │  services/impact.py      measured uplift, with implausible rows excluded    │
 │  services/fairs.py       stall codes, printable QR, post-fair attribution   │
+│  services/payments.py    UPI intent links, the escrow states, the split     │
+│  services/logistics.py   pincode → state, carrier rate cards, AWBs          │
+│  services/collective.py  largest-remainder allocation across a cluster      │
+│  services/share.py       WhatsApp messages, composed in the reader's tongue │
 │  services/llm.py         optional Claude layer, fails back silently         │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -289,6 +298,125 @@ the week and nothing afterwards, and one that produced ₹40,000 during the week
 and ₹1,20,000 over the next three months, are not the same fair — and until
 now nobody could tell them apart.
 
+### Getting the artisan paid
+
+The app opens by telling the artisan, in Hindi, that it will not merely take
+their product — it will pay them. Until an order could actually be paid for,
+that was a slogan with a database behind it.
+
+**UPI, not a card gateway.** The buyer taps a `upi://pay` link that opens
+their own GPay, PhonePe or Paytm with the amount and the artisan's VPA already
+filled in. No merchant onboarding, no settlement account, no PCI surface — and,
+the part that matters, it is the rail rural India already uses. An artisan can
+read a VPA off their own phone and check it without going to a branch; they
+cannot do that with an IFSC and an account number. The VPA is validated as it
+is typed and the bank named back to them ("looks like a PhonePe ID"), while an
+*unrecognised* handle is accepted rather than refused — new bank handles appear
+constantly and rejecting one would lock out exactly the person this is for.
+
+**The money is held between paid and delivered, and both sides are told so.**
+A buyer paying a stranger in a village wants to know it is not simply gone; an
+artisan shipping first wants to know it already exists. Holding it is the only
+arrangement that answers both. The API enforces it: releasing before payment is
+a 409, and so is releasing before the order is marked delivered.
+
+What it does **not** do is move real money, and the screen says so. Confirmation
+is recorded from the UTR the payer reads out of their own UPI app. Replacing
+`confirm()` with a provider webhook changes nothing else — the states, the split
+and the ledger are already the ones a settlement provider reports.
+
+### Despatch, and why India Post comes first
+
+An order that reaches a status called "shipped" with nothing behind it is a
+label. Every carrier priced here is one that actually serves the destination
+pincode, at published slabs plus GST, with handicraft-appropriate packing
+charged openly rather than hidden in the freight.
+
+Private couriers are faster and their APIs are nicer, and they do not go to
+Bhadohi's villages, to most of Kutch, or anywhere in the North-East outside a
+few district towns. An artisan whose only listed carrier is a private one has a
+catalogue and no way to ship from it. So Varanasi → Aizawl returns two India
+Post options and names Delhivery and DTDC as refusing, rather than quoting a
+cheap rate that would be rejected at the counter.
+
+Pincodes resolve through three-digit postal-district ranges, narrow ranges
+first — which is how Goa is separated from Maharashtra and Jharkhand from
+Bihar, both of which share a two-digit prefix with their neighbour and come out
+wrong in the two-digit table everyone reaches for first. Pickup is never
+scheduled on a Sunday, because an artisan told "collection tomorrow" on a
+Saturday will wait in all day.
+
+### The outbox: cataloguing with no signal
+
+This is the feature the whole "rural artisan" framing stands or falls on. If
+the app only works online, every claim about reaching that artisan is really a
+claim about the artisans who live near a tower.
+
+The service worker deliberately never replays writes — a POST that quietly
+succeeds an hour later publishes a listing the artisan believed had failed, at
+a price they may since have changed. So instead of hiding the retry, the app
+**shows** it: a queue screen with what is waiting, when it was recorded, and
+why anything stuck is stuck.
+
+What is queued is the **raw capture**, not a finished listing. Offline there is
+no price, no description and no craft identification to be had, so the phone
+keeps exactly what the artisan produced — a photograph and a spoken sentence —
+in IndexedDB, and the whole pipeline runs on send. Their work is never lost;
+only its processing is deferred.
+
+Each queued item's id is also the server-side idempotency key. A send
+interrupted after the server committed but before the phone heard the reply —
+which over a two-bar connection happens routinely — is retried, and returns the
+listing that already exists rather than making a second one.
+
+To see it: turn on airplane mode, catalogue a piece, turn it off. It uploads on
+its own.
+
+### Taking an order together
+
+MoSJE does not fund artisans one at a time. It funds them through self-help
+groups, and the problem statement's target is a *demographic*. Yet every
+marketplace asks a single artisan to quote for a single order — which means the
+orders actually worth having are the ones they all have to refuse.
+
+Six Bhadohi weavers who can each finish seventy pieces a month cannot
+individually answer a buyer wanting four hundred in six weeks. As a pool they
+answer it comfortably, and each is still paid for exactly what they made.
+
+Three things make it fair rather than merely possible:
+
+* **Capacity is measured, not assumed** — and measured inside the buyer's
+  deadline, rounded down. An allocation bigger than someone can finish is not
+  generosity, it is a missed deadline with their name on it.
+* **The rounding is largest-remainder.** Proportional shares almost never come
+  out whole, and quietly giving every leftover piece to the lead is how a
+  cluster stops trusting a platform. Leftovers go to whoever was rounded down
+  hardest — and the screen says so, in Hindi, before anyone agrees.
+* **The coordination share is visible.** Somebody collects the pieces, checks
+  them and hands them to the carrier. That is real work, so it is paid — 3%,
+  shown to every member in rupees, and switchable off.
+
+A pool that cannot cover the quantity reports the shortfall and refuses to
+commit. Quoting for less than the buyer asked for, without saying so, is how a
+cluster loses a buyer permanently.
+
+The buyer sees an ordinary quote. Everything downstream — acceptance, the
+order, the payment — works unchanged, because pooling is a supply-side
+arrangement and should not leak into the buyer's experience.
+
+### WhatsApp, because that is the app that is already open
+
+An artisan will not check a dashboard every morning. They will check WhatsApp.
+Any notification that does not arrive there arrives three days late.
+
+The mechanism is deliberately the boring one: `wa.me` click-to-chat links. No
+Business API, no template approval, no per-message cost, no onboarding — the
+message opens pre-written in whichever WhatsApp the person already has and they
+press send. It works from the artisan's phone, the buyer's phone and a laptop at
+a fair, on day one. Order alerts, payment requests, despatch notifications, pool
+invitations and listing shares are all composed in the recipient's language and
+written to be read aloud, because they frequently will be.
+
 ### The MoSJE evidence layer
 
 The Ministry disburses money through NSFDC, NSKFDC, NBCFDC, NDFDC and the DNT
@@ -421,6 +549,18 @@ Full interactive documentation at `/docs`. The endpoints that matter:
 | `POST /api/impact/artisan/{id}/link` | Link a beneficiary to a scheme and loan |
 | `GET /api/impact/artisan/{id}` | One artisan's measured outcome |
 | `GET /api/impact/ministry` · `ministry.csv` | Aggregate report by corporation and social category |
+| `GET /api/payments/check-vpa?vpa=` | Is this a UPI ID, and whose bank? |
+| `POST /api/payments/order/{id}/intent` | Raise a payment — returns the `upi://pay` link |
+| `POST /api/payments/{id}/confirm` · `release` · `refund` | The escrow state machine |
+| `GET /api/payments/artisan/{id}` | Payout statement, against the middleman counterfactual |
+| `GET /api/logistics/pincode/{pin}` | Where is this, and do private couriers go there? |
+| `GET /api/logistics/quote?origin=&destination=&weight_g=` | Every carrier that will take it, cheapest first |
+| `POST /api/logistics/order/{id}/book` | Book a despatch and issue an AWB |
+| `GET /api/logistics/track/{awb}` | Tracking, for a buyer with no account |
+| `GET /api/collective/cluster/{id}` | Who this artisan can pool with, and what each can make |
+| `POST /api/collective/plan` | The split, explained, before anyone commits |
+| `POST /api/collective/pools` · `/{id}/quote` | Commit the pool; quote the buyer once |
+| `GET /api/share/product/{id}` · `order/{id}` · `stall/{code}` | Ready-to-send WhatsApp messages |
 
 ---
 
@@ -430,13 +570,15 @@ Full interactive documentation at `/docs`. The endpoints that matter:
 ./run.sh test
 ```
 
-118 checks covering the claims this project actually makes: two different photos
+165 checks covering the claims this project actually makes: two different photos
 must read differently, two different voice notes must produce different crafts
 and different prices, a Hindi query and an English query must find the same
 listing, every engine explanation must exist in both languages, different
 products must match different buyers, a quote that is accepted must produce a
-real order, and an impact report must refuse to publish an uplift figure it
-cannot stand behind.
+real order, an impact report must refuse to publish an uplift figure it cannot
+stand behind, held money must refuse to be released before delivery, a pooled
+order's payouts must add up to the rupee, Jharkhand must not be mistaken for
+Bihar, and a listing sent twice from the outbox must arrive once.
 
 The suite reseeds the catalogue before it starts and uses a fresh phone number
 each run, so it passes twice in a row on the same server rather than tripping

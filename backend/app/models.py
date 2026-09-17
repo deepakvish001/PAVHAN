@@ -62,6 +62,17 @@ class User(Base):
     shg_name: Mapped[str] = mapped_column(String(120), default="")
     cluster: Mapped[str] = mapped_column(String(120), default="")
 
+    # Where the money actually lands. A VPA rather than an account number
+    # because that is what a rural artisan can read off their own phone and
+    # check without going to a branch.
+    upi_vpa: Mapped[str] = mapped_column(String(80), default="")
+    payout_name: Mapped[str] = mapped_column(String(120), default="")
+    pincode: Mapped[str] = mapped_column(String(8), default="")
+    # Pieces of their own craft this artisan can finish in a month. Used to
+    # split a bulk order across a cluster without promising what nobody can
+    # make.
+    monthly_capacity: Mapped[int] = mapped_column(Integer, default=0)
+
     products: Mapped[list[Product]] = relationship(back_populates="artisan")
 
 
@@ -120,6 +131,12 @@ class Product(Base):
     rating: Mapped[float] = mapped_column(Float, default=0)
     published: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+
+    # Set by the offline outbox. A listing catalogued with no signal is held on
+    # the phone and sent when the signal returns; if that send is interrupted
+    # and retried, this is what stops the artisan ending up with two of the
+    # same piece. Blank for anything created online.
+    client_ref: Mapped[str] = mapped_column(String(40), default="", index=True)
 
     artisan: Mapped[User | None] = relationship(back_populates="products")
 
@@ -269,4 +286,126 @@ class Order(Base):
     stall_code: Mapped[str] = mapped_column(String(16), default="")
     quote_id: Mapped[str | None] = mapped_column(ForeignKey("quotes.id"), nullable=True)
     timeline: Mapped[list] = mapped_column(JSON, default=list)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+
+
+class Payment(Base):
+    """Money moving, and the artisan being able to see where it is.
+
+    The welcome line this app opens with promises the artisan money, not a
+    marketplace listing. Until an order could actually be paid for, that was a
+    slogan. A Payment row is the thing that makes it true, and its states are
+    deliberately the ones an artisan asks about out loud: has the buyer paid,
+    is it still being held, has it reached me.
+    """
+
+    __tablename__ = "payments"
+
+    id: Mapped[str] = mapped_column(String(12), primary_key=True, default=_uid)
+    order_id: Mapped[str] = mapped_column(ForeignKey("orders.id"), index=True)
+    artisan_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+
+    amount: Mapped[float] = mapped_column(Float, default=0)
+    platform_fee: Mapped[float] = mapped_column(Float, default=0)
+    artisan_amount: Mapped[float] = mapped_column(Float, default=0)
+
+    # upi | cod | bank
+    method: Mapped[str] = mapped_column(String(12), default="upi")
+    # awaiting_payment | held | released | refunded | failed
+    state: Mapped[str] = mapped_column(String(20), default="awaiting_payment", index=True)
+
+    payer_name: Mapped[str] = mapped_column(String(120), default="")
+    payee_vpa: Mapped[str] = mapped_column(String(80), default="")
+    # The UTR a UPI app shows the payer. Typed in by whoever confirms the
+    # payment, and carried through to the artisan so both sides quote the same
+    # reference when something goes wrong.
+    reference: Mapped[str] = mapped_column(String(40), default="")
+
+    timeline: Mapped[list] = mapped_column(JSON, default=list)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+    held_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    released_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
+class Shipment(Base):
+    """Getting the piece from the village to the buyer.
+
+    An order that reaches "shipped" with nothing behind it is a status label,
+    not a despatch. This row is the despatch: which carrier, at what rate, to
+    which pincode, under which AWB.
+    """
+
+    __tablename__ = "shipments"
+
+    id: Mapped[str] = mapped_column(String(12), primary_key=True, default=_uid)
+    order_id: Mapped[str] = mapped_column(ForeignKey("orders.id"), index=True)
+
+    carrier: Mapped[str] = mapped_column(String(24), default="")
+    service: Mapped[str] = mapped_column(String(48), default="")
+    from_pincode: Mapped[str] = mapped_column(String(8), default="")
+    to_pincode: Mapped[str] = mapped_column(String(8), default="")
+    weight_g: Mapped[int] = mapped_column(Integer, default=0)
+    zone: Mapped[str] = mapped_column(String(24), default="")
+    rate: Mapped[float] = mapped_column(Float, default=0)
+    promised_days: Mapped[int] = mapped_column(Integer, default=0)
+
+    awb: Mapped[str] = mapped_column(String(24), default="", index=True)
+    # booked | picked_up | in_transit | out_for_delivery | delivered
+    status: Mapped[str] = mapped_column(String(24), default="booked")
+    pickup_on: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    timeline: Mapped[list] = mapped_column(JSON, default=list)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+
+
+class Pool(Base):
+    """A cluster answering an order none of its members could fill alone.
+
+    MoSJE works through self-help groups, and the orders worth having are the
+    ones a single artisan has to turn down. Six weavers who can each make
+    seventy pieces a month cannot individually quote for four hundred; as a
+    pool they can, and each one is still paid for exactly what they made.
+    """
+
+    __tablename__ = "pools"
+
+    id: Mapped[str] = mapped_column(String(12), primary_key=True, default=_uid)
+    requirement_id: Mapped[str] = mapped_column(
+        ForeignKey("buyer_requirements.id"), index=True)
+    lead_artisan_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    shg_name: Mapped[str] = mapped_column(String(120), default="")
+    cluster: Mapped[str] = mapped_column(String(120), default="")
+
+    quantity: Mapped[int] = mapped_column(Integer, default=0)
+    unit_price: Mapped[float] = mapped_column(Float, default=0)
+    lead_time_days: Mapped[int] = mapped_column(Integer, default=30)
+    # forming | quoted | awarded | declined
+    status: Mapped[str] = mapped_column(String(20), default="forming")
+    quote_id: Mapped[str | None] = mapped_column(
+        ForeignKey("quotes.id"), nullable=True)
+    notes: Mapped[str] = mapped_column(Text, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+
+
+class PoolMember(Base):
+    """One artisan's share of a pooled order, and what they are owed for it.
+
+    Kept as its own row rather than a blob on the pool, because this is the
+    number that decides whether a self-help group trusts the platform a second
+    time. It has to be individually visible, individually paid and
+    individually disputable.
+    """
+
+    __tablename__ = "pool_members"
+
+    id: Mapped[str] = mapped_column(String(12), primary_key=True, default=_uid)
+    pool_id: Mapped[str] = mapped_column(ForeignKey("pools.id"), index=True)
+    artisan_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+
+    allocated_qty: Mapped[int] = mapped_column(Integer, default=0)
+    capacity_qty: Mapped[int] = mapped_column(Integer, default=0)
+    payout: Mapped[float] = mapped_column(Float, default=0)
+    # invited | accepted | declined | delivered | paid
+    status: Mapped[str] = mapped_column(String(20), default="invited")
+    is_lead: Mapped[bool] = mapped_column(Boolean, default=False)
+    note: Mapped[str] = mapped_column(String(200), default="")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)

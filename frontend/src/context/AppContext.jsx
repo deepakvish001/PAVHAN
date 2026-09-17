@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import useVoiceAssistant from '../hooks/useVoiceAssistant'
 import usePwa from '../hooks/usePwa'
+import { useOutboxCount } from '../hooks/useOutboxCount'
 import { voiceLabels, voiceScripts } from '../api/client'
 
 const AppContext = createContext(null)
@@ -30,6 +31,10 @@ export function AppProvider({ children }) {
 
   const assistant = useVoiceAssistant({ lang, enabled: voiceOn })
   const pwa = usePwa()
+  // Mounting this here is what starts the outbox watching for the connection
+  // to return, app-wide — a listing recorded in a field with no signal sends
+  // itself the moment the phone finds a tower.
+  const outboxCount = useOutboxCount()
 
   useEffect(() => {
     try {
@@ -189,13 +194,13 @@ export function AppProvider({ children }) {
     user, setUser,
     scripts,
     labels, L,
-    pwa,
+    pwa, outboxCount,
     assistant,
     say, sayRaw, sayProtected, cancelUnlessProtected,
     toast, toasts,
     t: (hi, en) => (lang === 'hi' ? hi : en),
   }), [role, lang, voiceOn, user, theme, token, toggleTheme, fontScale, contrast,
-       scripts, labels, L, pwa, assistant, say, sayRaw, sayProtected,
+       scripts, labels, L, pwa, outboxCount, assistant, say, sayRaw, sayProtected,
        cancelUnlessProtected, toast, toasts])
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>

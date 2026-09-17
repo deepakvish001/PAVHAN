@@ -113,7 +113,48 @@ export function Toasts() {
 
 /** A quiet strip that only appears when there is something to say. */
 export function StatusStrip() {
-  const { pwa, lang, t } = useApp()
+  const { pwa, lang, t, outboxCount } = useApp()
+  const navigate = useNavigate()
+
+  // Offline with work waiting is the case worth naming precisely. "It will
+  // sync" is a promise the app can only keep because the outbox exists, so
+  // the strip says how many pieces are waiting and opens the queue.
+  if (!pwa.online && outboxCount > 0) {
+    return (
+      <button
+        onClick={() => navigate('/outbox')}
+        style={{
+          padding: '7px 14px', fontSize: 'calc(11.5px * var(--font-scale))', fontWeight: 700,
+          textAlign: 'center', width: '100%', border: 0,
+          background: 'var(--marigold)', color: 'var(--ink)',
+        }}
+        lang={lang}
+        role="status"
+      >
+        {t(`इंटरनेट नहीं — ${outboxCount} सामान भेजने बाकी। सिग्नल आते ही चले जाएँगे ›`,
+           `No internet — ${outboxCount} item${outboxCount === 1 ? '' : 's'} waiting. They go when the signal returns ›`)}
+      </button>
+    )
+  }
+
+  if (pwa.online && outboxCount > 0) {
+    return (
+      <button
+        onClick={() => navigate('/outbox')}
+        style={{
+          padding: '7px 14px', fontSize: 'calc(11.5px * var(--font-scale))', fontWeight: 700,
+          textAlign: 'center', width: '100%', border: 0,
+          background: 'var(--indigo)', color: '#fff',
+        }}
+        lang={lang}
+        role="status"
+      >
+        {t(`${outboxCount} सामान भेजे जा रहे हैं ›`,
+           `Sending ${outboxCount} item${outboxCount === 1 ? '' : 's'} ›`)}
+      </button>
+    )
+  }
+
   if (pwa.online && !pwa.updateReady) return null
   return (
     <div

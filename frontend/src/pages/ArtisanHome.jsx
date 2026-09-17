@@ -193,10 +193,12 @@ export default function ArtisanHome() {
             </div>
           )}
 
-          {/* The four things an artisan does between listings. */}
+          {/* Everything an artisan does between listings. */}
           <div className="grid-2">
             {[
+              ['/earnings', '💰', t('मेरी कमाई', 'My earnings')],
               ['/requirements', '📋', t('खरीदारों की माँग', 'Buyer requirements')],
+              ['/pooling', '👥', t('मिलकर ऑर्डर लीजिए', 'Take an order together')],
               ['/artisan/buyers', '🤝', t('मेल खाते खरीदार', 'Matched buyers')],
               ['/fairs', '🎪', t('मेला मोड', 'Fair mode')],
               ['/impact', '🏛️', t('योजना का असर', 'Scheme impact')],

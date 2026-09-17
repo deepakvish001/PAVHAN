@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import { Screen, TopBar } from '../components/Shell'
 import { Empty, Loading, ProductImage, rupees } from '../components/ui'
@@ -14,6 +15,7 @@ import { advanceOrder, artisanOrders, listUsers } from '../api/client'
  */
 export default function Orders() {
   const { t, lang, user, setUser, toast } = useApp()
+  const navigate = useNavigate()
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(null)
@@ -121,8 +123,22 @@ export default function Orders() {
                     ))}
                   </div>
 
+                  {/* The two things an order actually needs doing to it. An
+                      order that can only be re-labelled is a status board; one
+                      that can be paid for and despatched is a business. */}
+                  <div className="row" style={{ gap: 8, marginTop: 12 }}>
+                    <button className="btn btn-primary btn-sm" style={{ flex: 1 }}
+                            onClick={() => navigate(`/orders/${o.id}/pay`)}>
+                      💰 {t('पैसा', 'Get paid')}
+                    </button>
+                    <button className="btn btn-soft btn-sm" style={{ flex: 1 }}
+                            onClick={() => navigate(`/orders/${o.id}/ship`)}>
+                      📦 {t('भेजिए', 'Send it')}
+                    </button>
+                  </div>
+
                   {nextStage && o.status !== 'cancelled' && (
-                    <button className="btn btn-soft btn-sm btn-block" style={{ marginTop: 12 }}
+                    <button className="btn btn-ghost btn-sm btn-block" style={{ marginTop: 8 }}
                             onClick={() => advance(o, nextStage.key)}
                             disabled={busy === o.id}>
                       {busy === o.id ? <span className="spinner dark" />

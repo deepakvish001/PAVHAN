@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import { Screen, TopBar } from '../components/Shell'
-import { aiStatus, health, platformStats, priceModelCard, voiceLanguages } from '../api/client'
+import { aiStatus, health, lookupPincode, platformStats, priceModelCard, updateUser, voiceLanguages } from '../api/client'
 
 export default function Profile() {
   const navigate = useNavigate()
@@ -10,6 +10,7 @@ export default function Profile() {
           sayRaw, L, pwa, theme, toggleTheme, fontScale, setFontScale,
           contrast, setContrast } = useApp()
   const [status, setStatus] = useState(null)
+  const { setUser, toast } = useApp()
   const [stats, setStats] = useState(null)
   const [modelCard, setModelCard] = useState(null)
   const [langCount, setLangCount] = useState(0)
@@ -57,6 +58,10 @@ export default function Profile() {
               </div>
             </div>
           </div>
+
+          {role === 'artisan' && user?.id && (
+            <PincodeCard user={user} setUser={setUser} t={t} lang={lang} toast={toast} />
+          )}
 
           <div className="card">
             <div style={{ fontWeight: 700, fontSize: 'calc(13.5px * var(--font-scale))', marginBottom: 10 }} lang={lang}>
@@ -280,5 +285,75 @@ export default function Profile() {
         </div>
       </Screen>
     </>
+  )
+}
+
+
+/**
+ * The artisan's own pincode, which is where every shipment starts.
+ *
+ * It sits in Profile rather than buried in the despatch flow because it is
+ * asked for once and used for ever, and because an artisan who first meets
+ * this question while a buyer is waiting will guess. Confirming the state
+ * back to them is the check: somebody who sees "Uttar Pradesh" when they live
+ * in Bihar has caught a typo that would otherwise have mis-priced every
+ * parcel they ever send.
+ */
+function PincodeCard({ user, setUser, t, lang, toast }) {
+  const [value, setValue] = useState(user.pincode || '')
+  const [place, setPlace] = useState(null)
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    const pin = value.trim()
+    if (pin.length !== 6) { setPlace(null); return }
+    const timer = setTimeout(() => {
+      lookupPincode(pin).then(setPlace).catch(() => setPlace(null))
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [value])
+
+  const save = async () => {
+    setSaving(true)
+    try {
+      const updated = await updateUser(user.id, { pincode: value.trim() })
+      setUser(updated)
+      toast(t('पिनकोड सुरक्षित कर लिया।', 'Pincode saved.'), 'ok')
+    } catch (err) {
+      toast(err.message, 'err')
+    } finally { setSaving(false) }
+  }
+
+  const dirty = value.trim() !== (user.pincode || '') && value.trim().length === 6
+
+  return (
+    <div className="card" style={{ borderColor: user.pincode ? 'var(--line)' : 'var(--marigold)' }}>
+      <div style={{ fontWeight: 700, fontSize: 'calc(13.5px * var(--font-scale))' }} lang={lang}>
+        {t('आपका पिनकोड', 'Your pincode')}
+      </div>
+      <div className="muted" style={{ fontSize: 'calc(12px * var(--font-scale))', marginTop: 4, lineHeight: 1.5 }}
+           lang={lang}>
+        {t('कूरियर का दाम यहीं से निकलता है। एक बार डाल दीजिए, हर बार काम आएगा।',
+           'Shipping rates are worked out from here. Enter it once and it is used every time.')}
+      </div>
+      <div className="row" style={{ gap: 8, marginTop: 10 }}>
+        <input className="input" value={value} inputMode="numeric" maxLength={6}
+               placeholder="221001" style={{ flex: 1 }}
+               onChange={(e) => setValue(e.target.value.replace(/\D/g, ''))} />
+        <button className="btn btn-soft btn-sm" onClick={save} disabled={!dirty || saving}>
+          {saving ? <span className="spinner dark" /> : t('सहेजें', 'Save')}
+        </button>
+      </div>
+      {place && (
+        <div style={{
+          fontSize: 'calc(12px * var(--font-scale))', marginTop: 7, lineHeight: 1.45,
+          color: place.valid ? 'var(--ink-soft)' : 'var(--madder)',
+        }} lang={lang}>
+          {place.valid
+            ? `\u2713 ${place.state}${place.remote ? ` \u00b7 ${lang === 'hi' ? place.note_hi : place.note}` : ''}`
+            : (lang === 'hi' ? place.reason_hi : place.reason)}
+        </div>
+      )}
+    </div>
   )
 }

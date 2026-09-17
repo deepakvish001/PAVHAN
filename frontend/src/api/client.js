@@ -155,3 +155,47 @@ export const requestOtp = (phone) => api.post('/api/auth/request-otp', { phone }
 export const verifyOtp = (payload) => api.post('/api/auth/verify-otp', payload)
 export const completeProfile = (payload) => api.post('/api/auth/complete-profile', payload)
 export const whoAmI = (token) => api.get('/api/auth/me', { token })
+
+// --- profile -------------------------------------------------------------
+export const updateUser = (id, payload) => api.patch(`/api/users/${id}`, payload)
+
+// --- payments ------------------------------------------------------------
+export const checkVpa = (vpa) => api.get('/api/payments/check-vpa', { vpa })
+export const saveVpa = (artisanId, payload) =>
+  api.post(`/api/payments/artisan/${artisanId}/vpa`, payload)
+export const orderPayment = (orderId) => api.get(`/api/payments/order/${orderId}`)
+export const raisePayment = (orderId, payload) =>
+  api.post(`/api/payments/order/${orderId}/intent`, payload)
+export const confirmPayment = (paymentId, payload) =>
+  api.post(`/api/payments/${paymentId}/confirm`, payload)
+export const releasePayment = (paymentId) => api.post(`/api/payments/${paymentId}/release`)
+export const refundPayment = (paymentId) => api.post(`/api/payments/${paymentId}/refund`)
+export const paymentStatement = (artisanId) => api.get(`/api/payments/artisan/${artisanId}`)
+
+// --- logistics -----------------------------------------------------------
+export const lookupPincode = (pin) => api.get(`/api/logistics/pincode/${pin}`)
+export const shippingOptions = (orderId, toPincode) =>
+  api.get(`/api/logistics/order/${orderId}/options`, { to_pincode: toPincode })
+export const bookShipment = (orderId, payload) =>
+  api.post(`/api/logistics/order/${orderId}/book`, payload)
+export const orderShipment = (orderId) => api.get(`/api/logistics/order/${orderId}/shipment`)
+export const trackShipment = (awb) => api.get(`/api/logistics/track/${awb}`)
+export const advanceShipment = (id, to) =>
+  api.post(`/api/logistics/shipment/${id}/advance${qsPublic({ to })}`)
+
+// --- self-help group pooling --------------------------------------------
+export const poolCluster = (artisanId, deliveryDays) =>
+  api.get(`/api/collective/cluster/${artisanId}`, { delivery_days: deliveryDays })
+export const previewPool = (payload) => api.post('/api/collective/plan', payload)
+export const createPool = (payload) => api.post('/api/collective/pools', payload)
+export const getPool = (id) => api.get(`/api/collective/pools/${id}`)
+export const respondToPool = (poolId, memberId, payload) =>
+  api.post(`/api/collective/pools/${poolId}/members/${memberId}/respond`, payload)
+export const submitPoolQuote = (poolId) => api.post(`/api/collective/pools/${poolId}/quote`)
+export const artisanPools = (artisanId) => api.get(`/api/collective/artisan/${artisanId}/pools`)
+
+// --- share ---------------------------------------------------------------
+export const shareProduct = (id, lang, phone) =>
+  api.get(`/api/share/product/${id}`, { lang, phone })
+export const shareOrder = (id, lang) => api.get(`/api/share/order/${id}`, { lang })
+export const shareStall = (code, lang) => api.get(`/api/share/stall/${code}`, { lang })

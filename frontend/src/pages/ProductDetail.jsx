@@ -5,7 +5,7 @@ import { Screen, TopBar } from '../components/Shell'
 import {
   Bar, Loading, Money, ProductCard, ProductImage, ScoreRing, VoiceOrb, rupees,
 } from '../components/ui'
-import { getProduct, placeOrder, similarProducts } from '../api/client'
+import { getProduct, placeOrder, shareProduct, similarProducts } from '../api/client'
 
 export default function ProductDetail() {
   const { id } = useParams()
@@ -210,6 +210,12 @@ export default function ProductDetail() {
                   : `🛍️ ${t('अभी ख़रीदिए', 'Buy now')} · ${rupees(unit * qty)}`}
           </button>
 
+          {/* Sharing a craft is how a craft actually travels, and in India that
+              means WhatsApp. No Business API, no template approval: the
+              message opens pre-written in whichever WhatsApp is already on
+              the phone and the sender presses send. */}
+          <ShareButton productId={product.id} />
+
           {role === 'artisan' && (
             <>
               <button className="btn btn-soft btn-block"
@@ -242,5 +248,38 @@ export default function ProductDetail() {
         />
       </Screen>
     </>
+  )
+}
+
+
+function ShareButton({ productId }) {
+  const { t, lang, toast } = useApp()
+  const [busy, setBusy] = useState(false)
+
+  const go = async () => {
+    setBusy(true)
+    try {
+      const res = await shareProduct(productId, lang)
+      // The phone's own share sheet first where it exists — it reaches
+      // WhatsApp plus everything else the person actually uses. The wa.me
+      // link is the fallback, and on a desktop it is the only route.
+      if (navigator.share) {
+        try {
+          await navigator.share({ text: res.text, url: res.url })
+          return
+        } catch (err) {
+          if (err?.name === 'AbortError') return   // they changed their mind
+        }
+      }
+      window.open(res.whatsapp, '_blank', 'noopener')
+    } catch (err) {
+      toast(err.message, 'err')
+    } finally { setBusy(false) }
+  }
+
+  return (
+    <button className="btn btn-soft btn-block" onClick={go} disabled={busy}>
+      {busy ? <span className="spinner dark" /> : `💬 ${t('व्हाट्सऐप पर भेजिए', 'Share on WhatsApp')}`}
+    </button>
   )
 }

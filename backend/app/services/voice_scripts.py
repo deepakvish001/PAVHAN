@@ -173,6 +173,34 @@ SCREENS: dict[str, dict[str, str]] = {
         "en": "This browser cannot do speech to text. Open PAVHAN in Chrome, or simply "
               "type your description below — both work.",
     },
+    "outbox": {
+        "hi": "{line} सिग्नल न हो तब भी आप सामान रिकॉर्ड करते रहिए। जैसे ही नेटवर्क "
+              "आएगा, ये अपने आप चले जाएँगे — आपको कुछ नहीं करना पड़ेगा।",
+        "en": "{line} Keep recording even when there is no signal. The moment the "
+              "network returns these go on their own — you do not have to do anything.",
+    },
+    "earnings": {
+        "hi": "यहाँ आपका पैसा दिखता है। जो आ चुका है, जो डिलीवरी तक रोका हुआ है, और "
+              "जो अभी आना बाकी है। पैसा सीधे आपकी अपनी यूपीआई आईडी में जाता है — "
+              "बीच में कोई नहीं।",
+        "en": "This is your money. What has arrived, what is being held until delivery, "
+              "and what is still to come. It goes straight to your own UPI ID — nobody "
+              "stands in between.",
+    },
+    "shipping": {
+        "hi": "अब इसे भेजना है। मैंने उन्हीं कूरियर के दाम दिखाए हैं जो सचमुच आपके "
+              "पिनकोड तक आते हैं। जहाँ निजी कूरियर नहीं जाते, वहाँ इंडिया पोस्ट जाता है।",
+        "en": "Now to send it. I have priced only the carriers that actually come to "
+              "your pincode. Where the private couriers do not go, India Post does.",
+    },
+    "pooling": {
+        "hi": "यह ऑर्डर अकेले पूरा करना मुश्किल है, इसलिए इसे अपने समूह में बाँट "
+              "लीजिए। हिस्सा इस आधार पर बँटता है कि समय-सीमा तक कौन कितना बना सकता है, "
+              "और हर किसी को उसी हिसाब से पैसा मिलता है।",
+        "en": "This order is hard to fill alone, so share it across your group. The "
+              "split is based on how much each of you can finish before the deadline, "
+              "and everyone is paid for exactly that.",
+    },
 }
 
 TIPS = {

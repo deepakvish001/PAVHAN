@@ -9,6 +9,7 @@ import {
   coach, createProduct, enhancePhoto, generateListing, listUsers,
   matchBuyers, recommendPrice, sendEnquiry, transcribeAudio,
 } from '../api/client'
+import { enqueue as queueCapture } from '../lib/outbox'
 
 /**
  * Every step below is declared at module level on purpose.
@@ -293,10 +294,22 @@ function PhotoReport({ vision }) {
 // ===========================================================================
 // Step 1 — speak
 // ===========================================================================
-function VoiceStep({ imageId, text, setText, spokenLang, setSpokenLang, onGenerated }) {
-  const { t, lang, say, sayRaw, toast } = useApp()
+function VoiceStep({ imageId, rawFile, text, setText, spokenLang, setSpokenLang, onGenerated, onQueued }) {
+  const { t, lang, say, sayRaw, toast, user } = useApp()
   const [tips, setTips] = useState(null)
   const [generating, setGenerating] = useState(false)
+  // Re-read on every connection change rather than once on mount: the whole
+  // point of this screen is that the signal comes and goes while it is open.
+  const [online, setOnline] = useState(navigator.onLine)
+  useEffect(() => {
+    const sync = () => setOnline(navigator.onLine)
+    window.addEventListener('online', sync)
+    window.addEventListener('offline', sync)
+    return () => {
+      window.removeEventListener('online', sync)
+      window.removeEventListener('offline', sync)
+    }
+  }, [])
   const [showSamples, setShowSamples] = useState(false)
   const [diag, setDiag] = useState(null)
   const [recording, setRecording] = useState(false)
@@ -388,11 +401,32 @@ function VoiceStep({ imageId, text, setText, spokenLang, setSpokenLang, onGenera
 
   const generate = async () => {
     const value = text.trim()
-    if (!value && !imageId) {
+    if (!value && !imageId && !rawFile) {
       toast(t('पहले बोलिए या फोटो डालिए।', 'Speak or add a photo first.'), 'warn')
       return
     }
     mic.stop()
+
+    // Offline, there is no pipeline to run: the craft identification, the
+    // description and the price all live on the server. Rather than failing
+    // and losing what the artisan just recorded, the capture is held on the
+    // phone and the whole flow runs on send.
+    if (!navigator.onLine) {
+      setGenerating(true)
+      try {
+        await queueCapture({
+          photo: rawFile, transcript: value, language: spokenLang,
+          artisanId: user?.id || '', label: value.slice(0, 60),
+        })
+        onQueued?.()
+      } catch (err) {
+        toast(err.message, 'err')
+      } finally {
+        setGenerating(false)
+      }
+      return
+    }
+
     setGenerating(true)
     try {
       const data = await generateListing({
@@ -492,11 +526,28 @@ function VoiceStep({ imageId, text, setText, spokenLang, setSpokenLang, onGenera
         )}
       </div>
 
+      {!online && (
+        <div className="card" style={{ borderColor: 'var(--marigold)', marginBottom: 10 }}>
+          <div style={{ fontWeight: 800, fontSize: 'calc(13px * var(--font-scale))' }} lang={lang}>
+            📵 {t('अभी सिग्नल नहीं है', 'No signal right now')}
+          </div>
+          <div className="muted" style={{ fontSize: 'calc(12.5px * var(--font-scale))', marginTop: 4, lineHeight: 1.5 }}
+               lang={lang}>
+            {t('कोई बात नहीं। आपकी फोटो और आपकी बात फ़ोन में रख ली जाएगी, और सिग्नल आते ही पूरा विवरण और दाम बन जाएगा।',
+               'That is fine. Your photo and your words are kept on the phone, and the full listing and price are made the moment the signal returns.')}
+          </div>
+        </div>
+      )}
+
       <button className="btn btn-primary btn-block" onClick={generate} disabled={generating}
               style={{ padding: 16 }}>
         {generating
-          ? <><span className="spinner" /> {t('विवरण बनाया जा रहा है…', 'Writing your listing…')}</>
-          : `✨ ${t('मेरा विवरण बनाइए', 'Create my listing')}`}
+          ? <><span className="spinner" /> {online
+              ? t('विवरण बनाया जा रहा है…', 'Writing your listing…')
+              : t('फ़ोन में रखा जा रहा है…', 'Saving to your phone…')}</>
+          : online
+            ? `✨ ${t('मेरा विवरण बनाइए', 'Create my listing')}`
+            : `📥 ${t('फ़ोन में रखिए, बाद में भेजेंगे', 'Keep it on my phone, send later')}`}
       </button>
     </div>
   )
@@ -1465,6 +1516,16 @@ export default function AddProduct() {
     if (!file) return
     setAnalysing(true)
     setRawFile(file)
+    if (!navigator.onLine) {
+      // No signal. The Product Studio runs on the server, so there is nothing
+      // to enhance with — but the photograph itself is the artisan's work and
+      // is kept. It goes to the outbox with the voice note and is processed in
+      // full when the connection returns.
+      setStudio(null); setImageId(null); setVision(null); setAnalysing(false)
+      toast(t('सिग्नल नहीं है — फोटो रख ली है, बाद में भेज देंगे।',
+              'No signal — the photo is saved and will be sent later.'), 'warn', 4200)
+      return
+    }
     try {
       const res = await enhancePhoto(file, background)
       setStudio(res)
@@ -1512,9 +1573,11 @@ export default function AddProduct() {
                      onNext={() => goto(1)} />
         )}
         {step === 1 && (
-          <VoiceStep imageId={imageId} text={transcript} setText={setTranscript}
+          <VoiceStep imageId={imageId} rawFile={rawFile}
+                     text={transcript} setText={setTranscript}
                      spokenLang={spokenLang} setSpokenLang={setSpokenLang}
-                     onGenerated={(data) => { setListing(data); goto(2) }} />
+                     onGenerated={(data) => { setListing(data); goto(2) }}
+                     onQueued={() => navigate('/outbox')} />
         )}
         {step === 2 && listing && (
           <ReviewStep listing={listing} setListing={setListing} onNext={() => goto(3)} />

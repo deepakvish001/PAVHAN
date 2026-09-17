@@ -13,10 +13,10 @@ from fastapi.staticfiles import StaticFiles
 
 from . import __version__
 from .config import MEDIA_DIR, settings
-from .database import Base, SessionLocal, engine
+from .database import Base, SessionLocal, engine, sync_columns
 from .routers import (
-    ai, assistant, auth, buyers, export, fairs, impact, pricing, products,
-    search, studio, trade, users, voice,
+    ai, assistant, auth, buyers, collective, export, fairs, impact, logistics,
+    payments, pricing, products, search, share, studio, trade, users, voice,
 )
 from .seed import seed
 from .services import llm, search_engine
@@ -35,6 +35,13 @@ DIST_DIR = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
+    # Anyone upgrading from an earlier version has the old table shape on
+    # disk. Add what is missing rather than greeting them with "no such
+    # column: users.upi_vpa".
+    added = sync_columns(Base)
+    if added:
+        log.info("Added %d new column(s) to the existing database: %s",
+                 len(added), ", ".join(added))
     with SessionLocal() as db:
         result = seed(db)
         if result.get("seeded"):
@@ -69,7 +76,9 @@ app.add_middleware(
 for router in (products.router, search.router, ai.router, studio.router,
                pricing.router, buyers.router, voice.router, users.router,
                assistant.router, auth.router, export.router,
-               impact.router, fairs.router, trade.router):
+               impact.router, fairs.router, trade.router,
+               payments.router, logistics.router, collective.router,
+               share.router):
     app.include_router(router)
 
 MEDIA_DIR.mkdir(parents=True, exist_ok=True)

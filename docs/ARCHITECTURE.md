@@ -271,6 +271,143 @@ so "a new user is sent to onboarding" stays true. 118 checks now pass twice in
 a row against the same running server, which is the property that actually
 matters the morning of a demo.
 
+## Why the payment rail is a URL scheme and not a gateway
+
+`upi://pay?pa=…&am=…&tr=…` is the whole integration. It opens the payer's own
+UPI app with the destination and amount filled in, needs no merchant account,
+no settlement account and no PCI surface, and works from a four-year-old
+Android phone on a village connection.
+
+The details that took a second pass:
+
+* **Every parameter is percent-encoded.** Artisan names carry spaces and the
+  transaction note carries punctuation; an unencoded parameter silently
+  truncates the *amount* on some apps, which is the single worst failure this
+  feature could have.
+* **An unrecognised bank handle is accepted.** `KNOWN_HANDLES` exists so the
+  app can reassure the artisan ("looks like a PhonePe ID"), not to gate them.
+  New PSP and bank handles appear constantly, and a validator that refused one
+  would lock out precisely the person this app is for.
+* **A payment cannot be raised without a destination.** Creating a UPI intent
+  for an artisan with no VPA on file is a 400, not an empty link. Money
+  collected into nowhere is discovered last by the person it belonged to.
+
+The escrow is enforced in the API rather than described in the UI:
+`TRANSITIONS` allows `awaiting_payment → held → released`, `release` before
+`held` is a 409, and `release` before the *order* is delivered is a second,
+differently-worded 409. Both are tested, because a guarantee nobody tests is a
+guarantee that quietly stops holding.
+
+## The pincode table is three digits, and that is not a detail
+
+The obvious implementation keys on the first two digits of a PIN, and it is
+wrong twice over in ways that matter: `81`–`83` is Jharkhand *inside* Bihar's
+`80`–`85`, and `403` is Goa *inside* Maharashtra's `40`–`44`. Both come out as
+the wrong state, which puts them in the wrong rate zone, which quotes the wrong
+price — and the error is invisible until a parcel is refused at a counter.
+
+`PIN_RANGES` is therefore three-digit ranges with the narrow ones listed first
+and first match winning. Goa, Puducherry, Sikkim, the Andamans, Uttarakhand and
+Jharkhand are all listed above the neighbour they sit inside. Both cases are in
+the smoke suite by name.
+
+The serviceability model is data, not commentary. `REMOTE_STATES` is the set
+where private couriers thin out, and their rate cards carry a zero base for
+that zone — so Varanasi → Aizawl returns two India Post options and *names*
+Delhivery and DTDC as refusing. Showing an artisan a cheap rate from a carrier
+that will not come is worse than showing them nothing.
+
+## Largest-remainder, and why the lead does not get the leftovers
+
+Splitting four hundred pieces across six artisans in proportion to capacity
+produces six fractions, and something has to be done with the remainder. The
+tempting answer — give them to the lead — is the one that ends the pool. A
+self-help group that watches the organiser's share round up every time does not
+form a second one.
+
+So `allocate()` gives everyone the integer part of their proportional share and
+then hands the leftover pieces to whoever was rounded down hardest, capped at
+what each said they can make. It is the method used to allot seats from vote
+shares, and it has the property that matters here: the parts always sum to the
+whole, and nobody is systematically shortchanged. The screen states the rule in
+Hindi before anyone agrees to anything, and the suite asserts that the payouts
+add up to the net *to the rupee*.
+
+Capacity is measured inside the buyer's window and rounded **down**
+(`int(monthly * days / 30)`). A pool that promises the ceiling of everyone's
+capacity delivers late. The lead's coordination share is 3%, paid for real work
+— collecting, checking and despatching the consignment — and is shown as its
+own line to every member rather than folded into the split.
+
+When capacity does not reach the quantity, `plan()` reports the shortfall and
+`create_pool` refuses with a 409. Quoting short without saying so loses the
+buyer permanently, and it is the failure mode a well-meaning implementation
+falls into by default.
+
+## The outbox exists because the service worker refuses to replay writes
+
+Those two decisions are the same decision seen from both ends.
+
+The service worker never queues a POST, for a reason recorded when it was
+written: a write that quietly succeeds an hour later publishes a listing the
+artisan believed had failed, at a price they may since have changed. That is
+correct, and on its own it leaves an artisan with no signal unable to do
+anything at all.
+
+So the retry is not hidden, it is a screen. `lib/outbox.js` holds captures in
+IndexedDB — IndexedDB and not localStorage, because a photograph is a Blob and
+localStorage holds about five megabytes of string — and the app shows how many
+are waiting, what each is, and why anything stuck is stuck.
+
+What is stored is the **raw capture**: the photo and the transcript, not a
+finished listing. Offline there is no price, no description and no craft
+identification to be had, so deferring the processing rather than the work is
+the only honest option. On send, the full pipeline runs in the order the
+artisan would have run it: `analyzeImage` → `generateListing` → `createProduct`.
+
+Three details earn their keep:
+
+* **The queue id is the server's idempotency key.** `Product.client_ref` is
+  unique-by-lookup, and a create carrying a `client_ref` that already exists
+  returns the existing row. A send interrupted after the server committed but
+  before the phone heard the reply — routine on two bars — retries safely.
+  Without this the artisan wakes up to two of the same piece.
+* **`crypto.randomUUID` is not available on insecure origins**, which is
+  exactly where this app sometimes runs, so the id falls back to a timestamp
+  plus two random strings.
+* **The flush is serial.** These are photo uploads over the connection that
+  just came back; firing five at once on a weak signal is how all five time
+  out together. It also stops as soon as `navigator.onLine` goes false again
+  rather than grinding through the rest against a network that has gone.
+
+`watchConnection()` is mounted once in `AppContext`, which is what makes the
+promise true app-wide: a listing recorded in a field sends itself the moment
+the phone finds a tower, with nobody pressing anything.
+
+## A reset button that did not reset
+
+`POST /api/admin/reseed` deleted orders, products, buyers and users — and not
+requirements, quotes, enquiries, stalls or fairs. Those accumulated across
+every reset, and the smoke suite eventually found itself ranking **seventy-nine
+"open" requirements** against a catalogue of sixteen listings.
+
+The bug was invisible for as long as nobody counted, and the screen it
+corrupts is the one being demonstrated. The teardown now covers every table the
+demo writes to, deleted children-first so no foreign key is left dangling.
+
+## The 404 that was hiding real failures
+
+`GET /api/logistics/order/{id}/shipment` returned 404 when nothing had been
+despatched yet. Defensible REST, and wrong here: the despatch screen asks this
+question every time it opens, so the caller was written as
+`orderShipment(id).catch(() => null)` — which swallows a genuine network
+failure exactly as happily as the expected miss, and fills the console with red
+that hides the errors that matter.
+
+It now answers `{"shipment": null}`, and the caller catches only real errors and
+tells the artisan about them. The browser drive asserts zero console errors,
+which is how this was found at all.
+
 ## Things a reviewer should know are deliberate
 
 - **SQLite, not Postgres.** One file, no service to start, trivially resettable
@@ -309,6 +446,20 @@ matters the morning of a demo.
   16→23.2px, buttons 15→21.75px, section titles 18→26.1px, with no horizontal
   overflow at 412px wide. High contrast is a `data-contrast` attribute that
   redefines the palette tokens, for the same reason — one switch, whole theme.
+- **Payments stop before real settlement.** The UPI intent link is real and
+  opens a real payment app; confirmation is recorded from the UTR the payer
+  reads out of it. Replacing `payments.confirm()` with a provider webhook
+  changes nothing else, because the states, the split and the ledger are
+  already the ones a settlement provider reports. Claiming a settled payment
+  would have been the dishonest version of this.
+- **Carrier booking stops before the carrier's API.** Rates, zones, packing and
+  AWB format are real; handing the despatch to India Post's or Delhivery's own
+  system needs their credentials, and the screen says so — the same line drawn
+  at the same place as with GeM and ONDC.
+- **A stated capacity always beats an inferred one.** `_capacity` falls back to
+  inferring from an artisan's own listed lead times, and marks the result as
+  inferred so the screen can ask them to confirm it rather than quietly
+  promising a buyer something nobody agreed to.
 - **The service worker never caches writes.** A queued POST replaying later
   would publish a listing the artisan believed had failed. Reads fall back to
   the last good response and are tagged so the app can say "saved data"

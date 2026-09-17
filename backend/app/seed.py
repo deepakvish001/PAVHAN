@@ -19,7 +19,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .models import (
-    Buyer, BuyerRequirement, Exhibition, Order, Product, Quote, StallCard, User,
+    Buyer, BuyerRequirement, Enquiry, Exhibition, Order, Payment, Pool,
+    PoolMember, Product, Quote, Shipment, StallCard, User,
 )
 from .services.fairs import KNOWN_FAIRS, new_code
 from .services.pricing import recommend_price
@@ -34,38 +35,91 @@ ARTISANS = [
          language="hi", phone="+91 90000 11111",
          social_category="OBC", corporation="NBCFDC", scheme_name="Shilp Sampada",
          beneficiary_id="NBCFDC/UP/2023/04412", loan_amount=180000,
-         baseline_monthly_income=6500, cluster="Varanasi Handloom Cluster"),
+         baseline_monthly_income=6500, cluster="Varanasi Handloom Cluster",
+         shg_name="Banaras Bunkar Samiti",
+         upi_vpa="rukhsana.bano@ybl", pincode="221001", monthly_capacity=70),
     dict(name="Mohan Lal Prajapati", role="artisan", region="Jaipur",
          craft_focus="Jaipur Blue Pottery", experience_years=17, avatar="🧑‍🎨",
          language="hi", phone="+91 90000 22222",
          social_category="SC", corporation="NSFDC", scheme_name="Shilpi Samridhi Yojana",
          beneficiary_id="NSFDC/RJ/2022/11907", loan_amount=250000,
-         baseline_monthly_income=7200, cluster="Jaipur Blue Pottery Cluster"),
+         baseline_monthly_income=7200, cluster="Jaipur Blue Pottery Cluster",
+         upi_vpa="mohanlal@okaxis", pincode="302001", monthly_capacity=40),
     dict(name="Sita Devi Jha", role="artisan", region="Madhubani",
          craft_focus="Madhubani Painting", experience_years=31, avatar="👩‍🎨",
          language="hi", phone="+91 90000 33333",
          social_category="SC", corporation="NSFDC", scheme_name="Mahila Samriddhi Yojana",
          beneficiary_id="NSFDC/BR/2023/08815", loan_amount=120000,
          baseline_monthly_income=4800, shg_name="Mithila Kala Mahila Samiti",
-         cluster="Madhubani Painting Cluster"),
+         cluster="Madhubani Painting Cluster",
+         upi_vpa="sitadevi@okicici", pincode="847211", monthly_capacity=26),
     dict(name="Budhram Netam", role="artisan", region="Bastar",
          craft_focus="Dhokra Metal Craft", experience_years=26, avatar="🧑‍🏭",
          language="hi", phone="+91 90000 44444",
          social_category="ST", corporation="NSFDC", scheme_name="Term Loan",
          beneficiary_id="NSFDC/CG/2021/03329", loan_amount=200000,
-         baseline_monthly_income=5400, cluster="Bastar Dhokra Cluster"),
+         baseline_monthly_income=5400, cluster="Bastar Dhokra Cluster",
+         upi_vpa="budhram@ybl", pincode="494001", monthly_capacity=22),
     dict(name="Rita Baruah", role="artisan", region="Assam",
          craft_focus="Bamboo & Cane Craft", experience_years=12, avatar="👩‍🌾",
          language="en", phone="+91 90000 55555",
          social_category="OBC", corporation="NBCFDC", scheme_name="Swarnima for Women",
          beneficiary_id="NBCFDC/AS/2024/00761", loan_amount=90000,
          baseline_monthly_income=3900, shg_name="Sualkuchi Cane Collective",
-         cluster="Assam Bamboo Cluster"),
+         cluster="Assam Bamboo Cluster",
+         upi_vpa="rita.baruah@paytm", pincode="781103", monthly_capacity=55),
     dict(name="Abdul Rashid Mir", role="artisan", region="Srinagar",
          craft_focus="Kashmiri Pashmina", experience_years=35, avatar="🧔",
          language="hi", phone="+91 90000 66666",
          social_category="GEN", corporation="", scheme_name="",
-         baseline_monthly_income=9000, cluster="Srinagar Pashmina Cluster"),
+         baseline_monthly_income=9000, cluster="Srinagar Pashmina Cluster",
+         upi_vpa="rashid.mir@oksbi", pincode="190001", monthly_capacity=14),
+]
+
+# The rest of the two self-help groups.
+#
+# A pooling feature demonstrated on a group of one is not demonstrating
+# anything, and the orders this app exists to unlock are precisely the ones a
+# single artisan has to refuse. These are the neighbours who make that
+# arithmetic real: they carry a stated capacity and a UPI ID, and deliberately
+# no scheme linkage, so they add nothing to the ministry's impact figures that
+# the ministry did not actually finance.
+CLUSTER_PEERS = [
+    dict(name="Shakeel Ansari", role="artisan", region="Varanasi",
+         craft_focus="Banarasi Handloom Silk", experience_years=18, avatar="🧑‍🦱",
+         language="hi", phone="+91 90000 77001", social_category="OBC",
+         shg_name="Banaras Bunkar Samiti", cluster="Varanasi Handloom Cluster",
+         upi_vpa="shakeel.ansari@ybl", pincode="221001", monthly_capacity=65),
+    dict(name="Imrana Begum", role="artisan", region="Varanasi",
+         craft_focus="Banarasi Handloom Silk", experience_years=9, avatar="🧕",
+         language="hi", phone="+91 90000 77002", social_category="OBC",
+         shg_name="Banaras Bunkar Samiti", cluster="Varanasi Handloom Cluster",
+         upi_vpa="imrana@okhdfcbank", pincode="221007", monthly_capacity=42),
+    dict(name="Nafees Ahmad", role="artisan", region="Varanasi",
+         craft_focus="Banarasi Handloom Silk", experience_years=27, avatar="🧔",
+         language="hi", phone="+91 90000 77003", social_category="OBC",
+         shg_name="Banaras Bunkar Samiti", cluster="Varanasi Handloom Cluster",
+         upi_vpa="nafees.ahmad@paytm", pincode="221002", monthly_capacity=88),
+    dict(name="Salma Khatoon", role="artisan", region="Varanasi",
+         craft_focus="Banarasi Handloom Silk", experience_years=6, avatar="👩",
+         language="hi", phone="+91 90000 77004", social_category="OBC",
+         shg_name="Banaras Bunkar Samiti", cluster="Varanasi Handloom Cluster",
+         upi_vpa="salma.khatoon@ybl", pincode="221005", monthly_capacity=28),
+    dict(name="Urmila Devi", role="artisan", region="Madhubani",
+         craft_focus="Madhubani Painting", experience_years=24, avatar="👩‍🎨",
+         language="hi", phone="+91 90000 77005", social_category="SC",
+         shg_name="Mithila Kala Mahila Samiti", cluster="Madhubani Painting Cluster",
+         upi_vpa="urmila.devi@okicici", pincode="847211", monthly_capacity=20),
+    dict(name="Ranju Kumari", role="artisan", region="Madhubani",
+         craft_focus="Madhubani Painting", experience_years=11, avatar="👩",
+         language="hi", phone="+91 90000 77006", social_category="SC",
+         shg_name="Mithila Kala Mahila Samiti", cluster="Madhubani Painting Cluster",
+         upi_vpa="ranju.kumari@ybl", pincode="847212", monthly_capacity=16),
+    dict(name="Phoolwati Devi", role="artisan", region="Madhubani",
+         craft_focus="Madhubani Painting", experience_years=38, avatar="👵",
+         language="hi", phone="+91 90000 77007", social_category="SC",
+         shg_name="Mithila Kala Mahila Samiti", cluster="Madhubani Painting Cluster",
+         upi_vpa="phoolwati@oksbi", pincode="847211", monthly_capacity=12),
 ]
 
 # (craft_key, artisan index, noun, colour, size, weight, work_days, stock, note)
@@ -220,7 +274,18 @@ def seed(db: Session, *, force: bool = False) -> dict:
         return {"seeded": False, "reason": "catalogue already populated"}
 
     if force:
-        for model in (Order, Product, Buyer, User):
+        # Everything the demo creates, deleted children-first so foreign keys
+        # never dangle.
+        #
+        # This list used to stop at Order/Product/Buyer/User, which meant
+        # requirements, quotes, stalls and fairs survived every reset and
+        # piled up — the smoke suite eventually found itself ranking
+        # seventy-nine "open" requirements against a catalogue of sixteen.
+        # A reset button that does not reset is worse than no reset button,
+        # because the demo it corrupts is the one being watched.
+        for model in (PoolMember, Pool, Payment, Shipment, Quote, Enquiry,
+                      BuyerRequirement, StallCard, Exhibition,
+                      Order, Product, Buyer, User):
             for row in db.scalars(select(model)).all():
                 db.delete(row)
         db.commit()
@@ -228,7 +293,7 @@ def seed(db: Session, *, force: bool = False) -> dict:
     rng = random.Random(26090)  # deterministic demo data (SIH PS number)
     now = datetime.now(timezone.utc)
     users: list[User] = []
-    for i, spec in enumerate(ARTISANS):
+    for i, spec in enumerate(ARTISANS + CLUSTER_PEERS):
         # Joined between ten and eighteen months ago. Without a realistic
         # tenure, annualising their sales produces monthly income in lakhs.
         user = User(**spec, created_at=now - timedelta(days=300 + i * 25))

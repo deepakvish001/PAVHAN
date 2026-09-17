@@ -20,6 +20,11 @@ import FairMode from './pages/FairMode'
 import Storefront from './pages/Storefront'
 import Orders from './pages/Orders'
 import Requirements from './pages/Requirements'
+import Outbox from './pages/Outbox'
+import Earnings from './pages/Earnings'
+import OrderPayment from './pages/OrderPayment'
+import Shipping from './pages/Shipping'
+import Pooling from './pages/Pooling'
 
 /** Screens behind the role gate — visiting them without a role sends you to
  *  the front door, which is where the app asks who you are. */
@@ -61,6 +66,11 @@ export default function App() {
           <Route path="/fairs" element={<RequireRole><FairMode /></RequireRole>} />
           <Route path="/orders" element={<RequireRole><Orders /></RequireRole>} />
           <Route path="/requirements" element={<RequireRole><Requirements /></RequireRole>} />
+          <Route path="/outbox" element={<RequireRole><Outbox /></RequireRole>} />
+          <Route path="/earnings" element={<RequireRole><Earnings /></RequireRole>} />
+          <Route path="/pooling" element={<RequireRole><Pooling /></RequireRole>} />
+          <Route path="/orders/:orderId/pay" element={<RequireRole><OrderPayment /></RequireRole>} />
+          <Route path="/orders/:orderId/ship" element={<RequireRole><Shipping /></RequireRole>} />
           {/* A stall QR must open for anyone, with no role and no sign-in. */}
           <Route path="/s/:code" element={<Storefront />} />
           <Route path="*" element={<Navigate to="/" replace />} />

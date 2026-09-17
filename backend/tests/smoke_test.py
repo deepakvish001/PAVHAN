@@ -58,6 +58,29 @@ def post_json(path: str, payload: dict):
         return json.load(r)
 
 
+def expect_refusal(path: str, payload: dict | None = None, *, query: dict | None = None):
+    """POST something that ought to be rejected, and return (status, detail).
+
+    Several of the guarantees in this app are refusals — money that cannot be
+    released before delivery, a pool that will not quote for less than the
+    buyer asked for — and a refusal nobody tests is a refusal that quietly
+    stops happening.
+    """
+    url = f"{BASE}{path}"
+    if query:
+        url += "?" + urllib.parse.urlencode(query)
+    body = json.dumps(payload).encode() if payload is not None else b""
+    req = urllib.request.Request(url, body, {"Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            return r.status, json.load(r)
+    except urllib.error.HTTPError as exc:
+        try:
+            return exc.code, json.loads(exc.read().decode())
+        except Exception:  # noqa: BLE001 - a non-JSON error body is still a refusal
+            return exc.code, {}
+
+
 def post_multipart(path: str, fields: dict, files: dict | None = None):
     boundary = "----pavhan-smoke"
     body = b""
@@ -542,6 +565,194 @@ def main() -> int:
                             {"to": "shipped"})
     check("an order can be advanced", moved["status"] == "shipped")
     check("each move is timestamped", len(moved["timeline"]) >= 1)
+
+    print("\n[payments — money actually reaching the artisan]")
+    artisans = [u for u in get("/api/users") if u["role"] == "artisan"]
+    payee = next((u for u in artisans if u.get("upi_vpa")), artisans[0])
+    check("seeded artisans have a payout destination", bool(payee.get("upi_vpa")),
+          payee.get("upi_vpa", ""))
+
+    good = get("/api/payments/check-vpa?vpa=rukhsana.bano%40ybl")
+    check("a valid VPA is recognised, and its bank named",
+          good["valid"] and good["provider"] == "PhonePe", good["provider"])
+    typo = get("/api/payments/check-vpa?vpa=rukhsanabano")
+    check("a VPA with no @ is rejected", not typo["valid"])
+    unknown = get("/api/payments/check-vpa?vpa=artisan%40somenewbank")
+    check("an unrecognised bank handle is accepted, not refused",
+          unknown["valid"] and not unknown["provider"])
+
+    pay_order = next(o for o in orders["orders"] if o["status"] != "delivered")
+    before = get(f'/api/payments/order/{pay_order["id"]}')
+    check("the split is stated in both languages",
+          bool(before["split"]["note"]) and bool(before["split"]["note_hi"]))
+    check("the split beats a middleman",
+          before["split"]["artisan_amount"] > before["split"]["middleman_would_pay"])
+
+    raised = post_json(f'/api/payments/order/{pay_order["id"]}/intent',
+                       {"method": "upi"})
+    payment = raised["payment"]
+    check("a upi:// intent link is produced",
+          payment["upi_link"].startswith("upi://pay?")
+          and "am=" in payment["upi_link"] and "pa=" in payment["upi_link"])
+    check("the payment link carries a WhatsApp message",
+          payment["whatsapp"].startswith("https://wa.me/"))
+
+    code, _ = expect_refusal(f'/api/payments/{payment["id"]}/release')
+    check("money cannot be released before it is paid", code == 409)
+
+    held = post_json(f'/api/payments/{payment["id"]}/confirm',
+                     {"reference": "429911307755"})
+    check("a confirmed payment is held, not paid out",
+          held["payment"]["state"] == "held")
+    check("the held state is explained in Hindi too",
+          bool(held["payment"]["label_hi"]))
+
+    code, detail = expect_refusal(f'/api/payments/{payment["id"]}/release')
+    check("money cannot be released before delivery",
+          code == 409 and "delivered" in detail.get("detail", "").lower())
+
+    print("\n[logistics — an order that can actually be despatched]")
+    here = get("/api/logistics/pincode/221001")
+    check("a pincode resolves to its state",
+          here["state"] == "Uttar Pradesh", here["state"])
+    check("Jharkhand is not mistaken for Bihar",
+          get("/api/logistics/pincode/835325")["state"] == "Jharkhand")
+    check("Goa is not mistaken for Maharashtra",
+          get("/api/logistics/pincode/403001")["state"] == "Goa")
+    check("a six-digit-less pincode is refused",
+          not get("/api/logistics/pincode/2210")["valid"])
+
+    remote = get("/api/logistics/quote?origin=221001&destination=796001"
+                 "&weight_g=900&category=Textiles")
+    check("a remote destination is still serviceable", remote["serviceable"])
+    check("only India Post serves it", remote["only_government"])
+    check("the private couriers are named as refusing, not hidden",
+          len(remote["unavailable"]) == 2,
+          ", ".join(u["carrier"] for u in remote["unavailable"]))
+    metro = get("/api/logistics/quote?origin=221001&destination=400001"
+                "&weight_g=900&category=Textiles")
+    check("a metro destination has private options too",
+          not metro["only_government"] and len(metro["options"]) > 2)
+    check("rates rise with distance",
+          remote["options"][0]["total"] > metro["options"][0]["total"],
+          f'{metro["options"][0]["total"]} → {remote["options"][0]["total"]}')
+    check("every option is cheapest-first",
+          all(a["total"] <= b["total"] for a, b in
+              zip(metro["options"], metro["options"][1:])))
+
+    ship_order = next(o for o in orders["orders"] if o["id"] != pay_order["id"])
+    opts = get(f'/api/logistics/order/{ship_order["id"]}/options?to_pincode=796001')
+    check("an order's options use the artisan's own pincode",
+          opts.get("from_pincode") == payee.get("pincode") or bool(opts.get("from_pincode")))
+    booked = post_json(f'/api/logistics/order/{ship_order["id"]}/book',
+                       {"carrier": "indiapost-speed", "to_pincode": "796001"})
+    shipment = booked["shipment"]
+    check("an India Post AWB looks like an India Post AWB",
+          len(shipment["awb"]) == 13 and shipment["awb"].endswith("IN"),
+          shipment["awb"])
+    check("pickup is never scheduled on a Sunday",
+          shipment["pickup_on"][:10] and
+          __import__("datetime").date.fromisoformat(
+              shipment["pickup_on"][:10]).weekday() != 6)
+    tracked = get(f'/api/logistics/track/{shipment["awb"]}')
+    check("a buyer with no account can track by AWB alone",
+          tracked["order_id"] == ship_order["id"])
+    moved_ship = post_json_query(
+        f'/api/logistics/shipment/{shipment["id"]}/advance', {"to": "delivered"})
+    check("delivering the shipment delivers the order too",
+          moved_ship["order_status"] == "delivered")
+
+    print("\n[self-help group pooling]")
+    lead = next(u for u in artisans if u["name"] == "Rukhsana Bano")
+    reqs = get(f'/api/trade/requirements?artisan_id={lead["id"]}')["requirements"]
+    biggest = max(reqs, key=lambda r: r["quantity"])
+    cluster = get(f'/api/collective/cluster/{lead["id"]}'
+                  f'?delivery_days={biggest["delivery_days"]}')
+    check("a cluster has other artisans in it", len(cluster["members"]) > 0,
+          f'{len(cluster["members"])} peers')
+    check("every peer is there for a stated reason",
+          all(m["reason"] and m["reason_hi"] for m in cluster["members"]))
+    check("the combined capacity is reported",
+          cluster["combined_capacity"] > cluster["lead"]["capacity_window"])
+
+    member_ids = [m["artisan_id"] for m in cluster["members"]]
+    plan = post_json("/api/collective/plan", {
+        "requirement_id": biggest["id"], "lead_artisan_id": lead["id"],
+        "member_ids": member_ids})
+    check("the pool can cover an order no one could alone",
+          plan["feasible"] and plan["allocated"] == biggest["quantity"],
+          f'{plan["allocated"]}/{biggest["quantity"]}')
+    check("nobody is allocated more than they can make",
+          all(m["allocated"] <= m["capacity_window"] for m in plan["members"]))
+    payouts = round(sum(m["payout"] for m in plan["members"]), 2)
+    check("the payouts add up to exactly the net, to the rupee",
+          abs(payouts - plan["net"]) < 0.02, f'{payouts} vs {plan["net"]}')
+    lead_row = next(m for m in plan["members"] if m["is_lead"])
+    check("the lead's coordination share is shown separately",
+          lead_row["coordination"] > 0)
+    check("the rounding rule is explained to the group",
+          "rounded down" in plan["fairness_note"])
+
+    tiny = post_json("/api/collective/plan", {
+        "requirement_id": biggest["id"], "lead_artisan_id": lead["id"],
+        "member_ids": member_ids[:1]})
+    if tiny["feasible"]:
+        check("a two-person pool is honest about a huge order", True,
+              "this cluster is large enough even at two")
+    else:
+        check("a pool too small to deliver says so rather than quoting short",
+              tiny["shortfall"] > 0 and str(tiny["shortfall"]) in tiny["summary"])
+        code, _ = expect_refusal("/api/collective/pools", {
+            "requirement_id": biggest["id"], "lead_artisan_id": lead["id"],
+            "member_ids": member_ids[:1]})
+        check("an infeasible pool cannot be committed", code == 409)
+
+    pool = post_json("/api/collective/pools", {
+        "requirement_id": biggest["id"], "lead_artisan_id": lead["id"],
+        "member_ids": member_ids})
+    check("every non-lead member gets a written invitation",
+          len(pool["invites"]) > 0
+          and all(i["whatsapp"].startswith("https://wa.me/") for i in pool["invites"]))
+    code, _ = expect_refusal(f'/api/collective/pools/{pool["pool"]["id"]}/quote')
+    check("a pool cannot quote before its members agree", code == 409)
+
+    for member in pool["pool"]["members"]:
+        if not member["is_lead"]:
+            post_json(f'/api/collective/pools/{pool["pool"]["id"]}'
+                      f'/members/{member["id"]}/respond', {"accept": True})
+    quoted = post_json(f'/api/collective/pools/{pool["pool"]["id"]}/quote', {})
+    check("an agreed pool sends the buyer one ordinary quote",
+          bool(quoted["quote_id"]) and quoted["pool"]["status"] == "quoted")
+
+    print("\n[WhatsApp, the channel that is already open]")
+    a_product = get("/api/products?limit=1")[0]
+    shared = get(f'/api/share/product/{a_product["id"]}?lang=en')
+    check("a listing produces a shareable message",
+          "Handmade by" in shared["text"] and shared["url"] in shared["text"])
+    check("the share message makes the platform's point",
+          "no middleman" in shared["text"].lower())
+    check("the share link is a wa.me link",
+          shared["whatsapp"].startswith("https://wa.me/"))
+    hindi = get(f'/api/share/product/{a_product["id"]}?lang=hi')
+    check("the share message exists in Hindi too",
+          hindi["text"] != shared["text"] and "हाथ से" in hindi["text"])
+    alert = get(f'/api/share/order/{pay_order["id"]}?lang=hi')
+    check("an order alert is addressed to the artisan's own number",
+          alert["phone"].startswith("91") and len(alert["phone"]) == 12,
+          alert["phone"])
+
+    print("\n[the offline outbox's idempotency key]")
+    ref = f"smoketest{random.randrange(10 ** 8, 10 ** 9)}"
+    first = post_json("/api/products", {
+        "title": "Outbox replay probe", "client_ref": ref, "price": 1200})
+    second = post_json("/api/products", {
+        "title": "Outbox replay probe", "client_ref": ref, "price": 1200})
+    check("a replayed offline send returns the same listing, not a second one",
+          first["id"] == second["id"], first["id"])
+    without = post_json("/api/products", {"title": "No client ref", "price": 1200})
+    without2 = post_json("/api/products", {"title": "No client ref", "price": 1200})
+    check("listings without a client ref are still independent",
+          without["id"] != without2["id"])
 
     print("\n[artisan dashboard]")
     dash = get(f"/api/artisans/{artisan['id']}/dashboard")

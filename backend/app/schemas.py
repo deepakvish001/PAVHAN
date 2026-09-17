@@ -19,6 +19,32 @@ class UserOut(BaseModel):
     experience_years: int = 0
     avatar: str = "🧑‍🎨"
     phone: str = ""
+    # Read back by the payment, despatch and pooling screens.
+    upi_vpa: str = ""
+    payout_name: str = ""
+    pincode: str = ""
+    monthly_capacity: int = 0
+    shg_name: str = ""
+    cluster: str = ""
+
+
+class UserUpdate(BaseModel):
+    """The handful of fields an artisan edits about themselves.
+
+    Deliberately not every column: `upi_vpa` is set through the payments
+    router, which validates it, and nothing here can touch the scheme linkage
+    or the loan — those are the ministry's evidence, not a profile setting.
+    """
+
+    name: str | None = None
+    language: str | None = None
+    region: str | None = None
+    craft_focus: str | None = None
+    pincode: str | None = None
+    monthly_capacity: int | None = None
+    shg_name: str | None = None
+    cluster: str | None = None
+    payout_name: str | None = None
 
 
 class UserCreate(BaseModel):
@@ -64,6 +90,7 @@ class ProductOut(BaseModel):
     sustainability_score: int = 0
     gi_tagged: bool = False
     handmade: bool = True
+    client_ref: str = ""
     tags: list[str] = []
     keywords: list[str] = []
     images: list[str] = []
@@ -111,6 +138,9 @@ class ProductCreate(BaseModel):
     ai_meta: dict = {}
     pricing_meta: dict = {}
     artisan_id: str | None = None
+    # Set by the offline outbox so an interrupted retry cannot publish the
+    # same piece twice. See the idempotency check in routers/products.py.
+    client_ref: str = ""
 
 
 class ProductUpdate(BaseModel):

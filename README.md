@@ -83,6 +83,18 @@ Other modes:
 ./run.sh test       # 175-check API smoke test against a running server
 ```
 
+### Nothing to configure. No API key. No account.
+
+PAVHAN runs entirely on its own engines — the craft identification, the Hindi
+and English copy, the pricing, the buyer matching, the search and the photo
+studio are all code in this repository. There is no `.env` to fill in, no key
+to buy, and no external service to be rate-limited by. `./run.sh` on a fresh
+clone is the whole deployment.
+
+You can verify it rather than take our word: `GET /api/health` reports which
+engines are live, and on a clean checkout it says `"llm": "on-device"`. The
+full 175-check test suite passes with no key present.
+
 ### Optional: connect Claude
 
 Everything above works with **no API key at all** — the on-device engines are the
@@ -465,6 +477,44 @@ names the gaps ("your 14-day lead time exceeds their 10-day limit") so the
 artisan knows what to fix.
 
 ---
+
+## The Hindi voice works on machines with no Hindi voice
+
+The commonest report about this app is "the Hindi voice does not work, the
+English one does". It is almost never a bug in the app, and the fix is not a
+bug fix either — it is a workaround for the operating system.
+
+`speechSynthesis` can only speak a script its installed voices know. Android
+generally ships a `hi-IN` voice. **Windows does not**, unless somebody
+installed the Hindi language pack, and a borrowed demo laptop or a cloud VM
+never has. On those machines `getVoices()` returns English voices only, the
+app hands one of them a string of Devanagari, and the result is silence —
+while the English assistant on the very same page works perfectly. That
+asymmetry is the whole symptom.
+
+So when no Indic voice exists, PAVHAN transliterates the Hindi to Roman and
+reads it with the best Indian-English voice on the device:
+
+```
+यह वाराणसी में हाथ से बनी है। कीमत 4249 रुपये।
+  →  yeh vaaraanasee mein haath se banee hai. keemat 4249 rupaye.
+```
+
+A Hindi speaker understands that instantly — it is how Hindi is typed on a
+phone every day — and silence they do not. A real Hindi voice is always
+preferred when the device has one; this is what happens when it does not.
+
+The transliterator is not a character table. It performs the schwa deletion
+Hindi actually does (राम is "raam", never "raama"; अपने is "apne", not
+"apane") while deliberately leaving four-syllable compounds alone, because
+telling a compound from a verb form needs morphology it does not have and an
+extra syllable is understood where a missing one is not. Numbers, currency
+and Latin words pass through untouched, because an artisan who hears the
+wrong price is worse off than one who hears none.
+
+**Profile tells you which mode this device is in**, names the voice being
+used, and has a button to hear it — so "why is the Hindi romanised?" has an
+answer on the screen rather than in a support thread.
 
 ## Everything is bilingual, including the reasoning
 

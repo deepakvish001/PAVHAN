@@ -482,6 +482,70 @@ as the duplicate `"mr"` key that once made Marathi resolve to Hindi, and the
 same remedy applies: an AST walk over the module now asserts no top-level name
 is defined more than once.
 
+## "The Hindi voice is not working" was the operating system
+
+Reported immediately after the Hindi *text* was fixed, and with a decisive
+clue attached: the English assistant worked fine on the same page. That
+asymmetry rules out almost everything in the app — the queueing, the autoplay
+unlock, the utterance plumbing are shared — and points at the one thing that
+is not shared, which is the voice.
+
+`speechSynthesis` speaks only scripts its installed voices know. Android ships
+`hi-IN`; Windows does not without the Hindi language pack, and a demo laptop
+or a cloud VM never has one. `pickVoice(voices, 'hi')` found no Hindi voice,
+fell through to its English fallback, and the app then handed an English voice
+a string of Devanagari. Nothing came out.
+
+Worse, the previous commit had made this *more* likely to be silent, not less:
+before it, the Hindi strings still had English words scattered through them,
+so an English voice at least said something. Cleaning the Hindi to pure
+Devanagari removed the last thing that voice could pronounce. A correct fix
+made the symptom complete.
+
+The remedy is `lib/devanagari.js`: when no Indic voice is present, transliterate
+to Roman and let an Indian-English voice read it. Four details matter.
+
+* **Schwa deletion.** Hindi writes an `a` after every bare consonant and then
+  declines to say most of them. The word-final one always goes — राम is
+  "raam", never "raama" — and that rule has no exceptions worth worrying
+  about. A second rule drops the middle vowel in three-syllable words (अपने →
+  "apne") and stops there: at four syllables the same rule starts mangling
+  compounds (चित्रकला is "chitrakala", not "chitraklaa"), and distinguishing a
+  compound from a verb form needs morphology this does not have. Both rules
+  err towards keeping the vowel, because an extra syllable is understood and a
+  missing one is not.
+* **The danda is inside the Devanagari block.** U+0964 is a punctuation mark
+  that a naive "is this Devanagari?" test keeps glued to the word, so "रुपये।"
+  never matched the entry for "रुपये" and came out "rupye" two words after the
+  same word had come out "rupaye" correctly.
+* **The utterance language must be `en-IN`, not `hi-IN`.** Telling an English
+  voice the text is Hindi makes it apply Hindi phonology to Roman letters,
+  which is worse than not telling it anything. `transliterated` decides.
+* **Numbers, currency and Latin words pass through.** An artisan who hears the
+  wrong price is worse off than one who hears none.
+
+`Profile` now reports which of the four states this device is in — a real
+Hindi voice, another Indic voice, romanised fallback, or no voices at all —
+names the voice, and offers a button to hear it. The commonest support
+question about this app now has an answer on the screen.
+
+Tested by installing a fake `speechSynthesis` with each machine's voice list
+and asserting what the app *would say*: Devanagari where a Hindi voice exists,
+Roman where it does not, `en-IN` on the utterance either way. The
+transliterator itself has its own test, run by `./run.sh test` before the
+API suite, because on most machines it is the only reason the artisan hears
+anything at all.
+
+## The brand was being announced as the word for "wind"
+
+While listening to the recorded utterances, the greeting turned out to say
+**पवन** — *pavan*, wind — rather than **पावहन**. It was in the welcome line
+for all four roles, the assistant's answers, the fee explanation and the
+impact report: the first sentence anyone hears, naming the wrong product. The
+only place the old spelling survives is the regex that matches what a user
+*types*, which now accepts both, because someone asking about the app may well
+spell it either way.
+
 ## Things a reviewer should know are deliberate
 
 - **SQLite, not Postgres.** One file, no service to start, trivially resettable

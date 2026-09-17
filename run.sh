@@ -97,6 +97,12 @@ case "$MODE" in
     ;;
 
   test)
+    # The transliteration tests run first and need no server: on any machine
+    # without a Hindi voice installed, that function is the only reason the
+    # artisan hears anything at all.
+    if command -v node >/dev/null 2>&1; then
+      node "$ROOT/frontend/src/lib/devanagari.test.mjs" || exit 1
+    fi
     cd "$ROOT/backend"
     if [ -f .venv/bin/activate ]; then source .venv/bin/activate; fi
     exec python tests/smoke_test.py

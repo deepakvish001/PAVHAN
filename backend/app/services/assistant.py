@@ -71,7 +71,7 @@ INTENTS: list[tuple[str, list[str]]] = [
         r"advance|एडवांस",
     ]),
     ("what_is_pavhan", [
-        r"what is (this|the)? ?(app|pavhan)|pavhan kya|पवन क्या|about (this )?app",
+        r"what is (this|the)? ?(app|pavhan)|pavhan kya|पवन क्या|पावहन क्या|about (this )?app",
         r"ye app kya|यह ऐप|यह क्या",
         r"who are you|tum kaun|आप कौन",
     ]),
@@ -98,7 +98,7 @@ KNOWLEDGE: dict[str, dict[str, str]] = {
               "work out a fair price from your hours and materials, and find "
               "buyers who want exactly that kind of piece. You never have to "
               "type in English or edit a photo.",
-        "hi": "पवन आपका बिज़नेस मैनेजर है। आप सामान की फोटो लीजिए और बोलकर बता दीजिए — "
+        "hi": "पावहन आपका बिज़नेस मैनेजर है। आप सामान की फोटो लीजिए और बोलकर बता दीजिए — "
               "बाकी सब मैं करूँगा। विवरण हिंदी और अंग्रेज़ी दोनों में लिखूँगा, आपकी मेहनत "
               "और माल के हिसाब से सही दाम निकालूँगा, और ऐसे खरीदार ढूँढूँगा जिन्हें यही "
               "चीज़ चाहिए। न अंग्रेज़ी लिखनी है, न फोटो एडिट करनी है।",
@@ -137,14 +137,14 @@ KNOWLEDGE: dict[str, dict[str, str]] = {
               "Varanasi. Buyers pay more for it, so PAVHAN adds a 12% premium to "
               "the recommended price when your craft carries one.",
         "hi": "जीआई यानी भौगोलिक संकेत — सरकार का प्रमाण कि यह शिल्प वाकई उसी क्षेत्र का है, "
-              "जैसे बनारसी रेशम वाराणसी का। खरीदार इसके लिए ज़्यादा देते हैं, इसलिए पवन ऐसे "
+              "जैसे बनारसी रेशम वाराणसी का। खरीदार इसके लिए ज़्यादा देते हैं, इसलिए पावहन ऐसे "
               "शिल्प के दाम में 12% जोड़ता है।",
     },
     "commission_help": {
         "en": "PAVHAN keeps 5% of the sale price, and that is the only deduction. "
               "It is shown on every product page, so the buyer can see it too. A "
               "trader at your door typically keeps 55 to 60%.",
-        "hi": "पवन बिक्री का सिर्फ़ 5% रखता है, और इसके अलावा कोई कटौती नहीं है। यह हर सामान "
+        "hi": "पावहन बिक्री का सिर्फ़ 5% रखता है, और इसके अलावा कोई कटौती नहीं है। यह हर सामान "
               "के पन्ने पर लिखा होता है, खरीदार को भी दिखता है। बिचौलिया आमतौर पर 55 से 60% "
               "रख लेता है।",
     },
@@ -199,7 +199,7 @@ SUGGESTIONS = {
         "मेरी कमाई कितनी है?",
         "अच्छी फोटो कैसे लूँ?",
         "जीआई क्या होता है?",
-        "पवन कितना कमीशन लेता है?",
+        "पावहन कितना कमीशन लेता है?",
         "मेरे लिए खरीदार कौन हैं?",
     ],
     "en": [

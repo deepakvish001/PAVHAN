@@ -27,9 +27,16 @@ export default function ProductDetail() {
         // sentence with a raw "Madhubani" dropped into it is read out by a
         // Hindi voice, which mangles the one word in it the artisan would
         // have recognised — and it is the same mixing the screen used to do.
+        // A listing without a region produced "यह  में हाथ से बनाई गई है" —
+        // a sentence with a hole in it, which a voice reads as a stumble.
+        // Say the shorter sentence instead of the broken one.
+        const where = L(p.region)
         setTimeout(() => sayRaw(
-          t(`यह ${L(p.region)} में हाथ से बनाई गई है। कीमत ${Math.round(p.price)} रुपये।`,
-            `This piece was handmade in ${p.region}. The price is ${Math.round(p.price)} rupees.`),
+          where
+            ? t(`यह ${where} में हाथ से बनाई गई है। कीमत ${Math.round(p.price)} रुपये।`,
+                `This piece was handmade in ${where}. The price is ${Math.round(p.price)} rupees.`)
+            : t(`यह हाथ से बनाई गई है। कीमत ${Math.round(p.price)} रुपये।`,
+                `This piece is handmade. The price is ${Math.round(p.price)} rupees.`),
         ), 700)
       }
     }).catch(() => {})

@@ -130,6 +130,9 @@ export default function Profile() {
                 {voiceOn ? t('चालू', 'On') : t('बंद', 'Off')}
               </button>
             </div>
+
+            <HindiVoiceNote assistant={assistant} t={t} lang={lang} sayRaw={sayRaw} />
+
             <div className="row-between" style={{ marginBottom: 12 }}>
               <div style={{ fontWeight: 700, fontSize: 'calc(13.5px * var(--font-scale))' }} lang={lang}>
                 {theme === 'dark' ? '🌙' : '☀️'} {t('रंग-रूप', 'Appearance')}
@@ -354,6 +357,89 @@ function PincodeCard({ user, setUser, t, lang, toast }) {
             : (lang === 'hi' ? place.reason_hi : place.reason)}
         </div>
       )}
+    </div>
+  )
+}
+
+
+/**
+ * What this particular device can do with the Hindi voice.
+ *
+ * The most common support question about this app is "the Hindi voice does
+ * not work, the English one does", and the answer is almost never in the
+ * code: the machine has no Hindi voice installed. Windows does not ship one
+ * unless somebody added the Hindi language pack, and a borrowed demo laptop
+ * never has. Saying so on screen turns a mystery into a one-line
+ * explanation — and shows that the app kept speaking Hindi anyway.
+ */
+function HindiVoiceNote({ assistant, t, lang, sayRaw }) {
+  const [info, setInfo] = useState(null)
+
+  useEffect(() => {
+    if (!assistant?.hindiVoice) return undefined
+    const read = () => setInfo(assistant.hindiVoice())
+    read()
+    // Voices load asynchronously and often arrive after the first render.
+    const timer = setTimeout(read, 900)
+    return () => clearTimeout(timer)
+  }, [assistant])
+
+  if (!info) return null
+
+  const MODES = {
+    native: {
+      icon: '✅',
+      title: t('हिंदी आवाज़ मौजूद है', 'A Hindi voice is installed'),
+      body: t('यह डिवाइस देवनागरी पढ़ सकता है, इसलिए सब कुछ असली हिंदी आवाज़ में बोला जाएगा।',
+              'This device can read Devanagari, so everything is spoken in a real Hindi voice.'),
+    },
+    indic: {
+      icon: '✅',
+      title: t('भारतीय भाषा की आवाज़ मौजूद है', 'An Indic voice is installed'),
+      body: t('देवनागरी पढ़ने वाली आवाज़ मिल गई है।',
+              'A voice that can read Devanagari was found.'),
+    },
+    romanised: {
+      icon: 'ℹ️',
+      title: t('इस डिवाइस में हिंदी आवाज़ नहीं है', 'This device has no Hindi voice'),
+      body: t('कोई बात नहीं — हिंदी रोमन में लिखकर भारतीय अंग्रेज़ी आवाज़ से बोली जाएगी, ' +
+              'जैसे "yeh haath se banee hai"। सुनने में हिंदी ही लगेगी। ' +
+              'असली हिंदी आवाज़ चाहिए तो फ़ोन की सेटिंग में हिंदी भाषा जोड़ लीजिए।',
+              'That is fine — the Hindi is written in Roman and read by an Indian-English ' +
+              'voice, like "yeh haath se banee hai". It still sounds like Hindi. ' +
+              'For a true Hindi voice, add Hindi in your device language settings.'),
+    },
+    none: {
+      icon: '⚠️',
+      title: t('इस ब्राउज़र में कोई आवाज़ नहीं मिली', 'No voices found in this browser'),
+      body: t('क्रोम या एज में खोलिए — वहाँ आवाज़ काम करेगी।',
+              'Open PAVHAN in Chrome or Edge, where speech works.'),
+    },
+  }
+  const mode = MODES[info.mode] || MODES.none
+
+  return (
+    <div style={{
+      marginBottom: 12, padding: '10px 11px', borderRadius: 12,
+      background: 'var(--paper-2)', lineHeight: 1.5,
+    }}>
+      <div style={{ fontWeight: 700, fontSize: 'calc(12.5px * var(--font-scale))' }} lang={lang}>
+        {mode.icon} {mode.title}
+      </div>
+      <div className="muted" style={{ fontSize: 'calc(11.5px * var(--font-scale))', marginTop: 4 }}
+           lang={lang}>
+        {mode.body}
+      </div>
+      {info.voice && (
+        <div className="muted" style={{ fontSize: 'calc(10.5px * var(--font-scale))', marginTop: 5 }}>
+          {t('आवाज़', 'Voice')}: {info.voice} ({info.lang})
+        </div>
+      )}
+      <button className="btn btn-soft btn-sm" style={{ marginTop: 9 }}
+              onClick={() => sayRaw('नमस्ते! यह पावहन की हिंदी आवाज़ है। आपका सामान अब पूरे भारत में दिखेगा।',
+                                    { lang: 'hi' })}>
+        🔊 {t('हिंदी आवाज़ सुनकर देखिए', 'Test the Hindi voice')}
+      </button>
     </div>
   )
 }

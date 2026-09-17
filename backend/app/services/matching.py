@@ -232,7 +232,7 @@ def match_buyers(product, buyers: list, *, limit: int = 8, min_score: int = 0) -
         factors.append(MatchFactor(
             "Buyer reliability", "खरीदार की साख", round(reliability, 3), WEIGHTS["reliability"],
             f"{buyer.repeat_buyer_score}% repeat-order record on PAVHAN",
-            f"पवन पर इनका {buyer.repeat_buyer_score}% दोबारा ऑर्डर देने का रिकॉर्ड है",
+            f"पावहन पर इनका {buyer.repeat_buyer_score}% दोबारा ऑर्डर देने का रिकॉर्ड है",
         ))
 
         raw = sum(f.score * f.weight for f in factors)

@@ -122,7 +122,7 @@ DISCLAIMER = {
           "sanctioned rate, tenure and instalment are whatever your loan "
           "document says. PAVHAN does not lend, sanction or recover money.",
     "hi": "यहाँ दी गई शर्तें केवल अनुमान के लिए हैं। आपकी असली ब्याज दर, अवधि और किस्त वही "
-          "है जो आपके ऋण दस्तावेज़ में लिखी है। पवन न ऋण देता है, न वसूली करता है।",
+          "है जो आपके ऋण दस्तावेज़ में लिखी है। पावहन न ऋण देता है, न वसूली करता है।",
 }
 
 

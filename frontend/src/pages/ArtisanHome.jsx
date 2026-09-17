@@ -7,7 +7,7 @@ import { artisanEnquiries, dashboard, listUsers, marketContext } from '../api/cl
 
 export default function ArtisanHome() {
   const navigate = useNavigate()
-  const { t, lang, user, setUser, scripts, sayRaw, L } = useApp()
+  const { t, lang, user, setUser, scripts, sayRaw, L, P } = useApp()
   const [data, setData] = useState(null)
   const [enquiries, setEnquiries] = useState([])
   const [market, setMarket] = useState(null)
@@ -184,7 +184,7 @@ export default function ArtisanHome() {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontWeight: 700, fontSize: 'calc(13.5px * var(--font-scale))' }}>{e.buyer.name}</div>
                     <div className="muted" style={{ fontSize: 'calc(11.5px * var(--font-scale))' }}>
-                      {e.quantity} × {e.product.title.slice(0, 26)}…
+                      {e.quantity} × {P(e.product, 'title').slice(0, 26)}…
                     </div>
                   </div>
                   <div className="pill leaf mono"><Money value={e.estimated_value} /></div>
@@ -232,7 +232,7 @@ export default function ArtisanHome() {
                 >
                   <ScoreRing value={p.quality_score} size={46} label={t('गुण', 'quality')} />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 700, fontSize: 'calc(13.5px * var(--font-scale))', lineHeight: 1.3 }}>{p.title}</div>
+                    <div lang={lang} style={{ fontWeight: 700, fontSize: 'calc(13.5px * var(--font-scale))', lineHeight: 1.3 }}>{P(p, 'title')}</div>
                     <div className="muted" style={{ fontSize: 'calc(11.5px * var(--font-scale))', marginTop: 3 }}>
                       👁 {p.views} · <Money value={p.price} />
                     </div>

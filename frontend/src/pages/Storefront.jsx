@@ -16,7 +16,7 @@ import { stallStorefront } from '../api/client'
 export default function Storefront() {
   const { code } = useParams()
   const navigate = useNavigate()
-  const { t, lang, toast } = useApp()
+  const { t, lang, toast, L, P } = useApp()
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [followed, setFollowed] = useState(false)
@@ -121,7 +121,7 @@ export default function Storefront() {
                     {lang === 'hi' ? p.title_hi || p.title : p.title}
                   </div>
                   <div className="muted" style={{ fontSize: 'calc(11.5px * var(--font-scale))', margin: '3px 0 6px' }}>
-                    {p.craft_type} · {p.region}
+                    {L(p.craft_type)} · {L(p.region)}
                   </div>
                   <span className="pill gold mono">{rupees(p.price)}</span>
                 </div>

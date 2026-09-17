@@ -74,6 +74,27 @@ export function AppProvider({ children }) {
     return value
   }, [labels, lang])
 
+  /**
+   * Product text in the reader's own language.
+   *
+   * Every listing carries both halves — `title` and `title_hi`, `story` and
+   * `story_hi` — and for a long time the app generated the Hindi, stored it,
+   * and then showed the English to everybody. An artisan who set the
+   * interface to Hindi still browsed a catalogue written in the one language
+   * this project exists to spare them.
+   *
+   * The fallback is deliberate and one-way: an empty Hindi field shows the
+   * English rather than nothing, because a blank title is worse than a
+   * foreign one, and listings imported or created before the Hindi generator
+   * existed still have to render.
+   */
+  const P = useCallback((product, field) => {
+    if (!product) return ''
+    const english = product[field] || ''
+    if (lang !== 'hi') return english
+    return product[`${field}_hi`] || english
+  }, [lang])
+
   /** Speak something that must survive the next navigation and must not be
    *  talked over by the screen it lands on. */
   const protectedUntil = useRef(0)
@@ -194,13 +215,13 @@ export function AppProvider({ children }) {
     user, setUser,
     scripts,
     labels, L,
-    pwa, outboxCount,
+    pwa, outboxCount, P,
     assistant,
     say, sayRaw, sayProtected, cancelUnlessProtected,
     toast, toasts,
     t: (hi, en) => (lang === 'hi' ? hi : en),
   }), [role, lang, voiceOn, user, theme, token, toggleTheme, fontScale, contrast,
-       scripts, labels, L, pwa, outboxCount, assistant, say, sayRaw, sayProtected,
+       scripts, labels, L, P, pwa, outboxCount, assistant, say, sayRaw, sayProtected,
        cancelUnlessProtected, toast, toasts])
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>

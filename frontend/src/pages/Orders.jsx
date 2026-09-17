@@ -14,7 +14,7 @@ import { advanceOrder, artisanOrders, listUsers } from '../api/client'
  * telephone to ask, and the artisan gets their afternoon back.
  */
 export default function Orders() {
-  const { t, lang, user, setUser, toast } = useApp()
+  const { t, lang, user, setUser, toast, P } = useApp()
   const navigate = useNavigate()
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -91,8 +91,8 @@ export default function Orders() {
                     <ProductImage product={{ images: [o.product?.image] }} height={62}
                                   style={{ width: 62 }} />
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 700, fontSize: 'calc(13.5px * var(--font-scale))', lineHeight: 1.3 }}>
-                        {o.product?.title || t('सामान', 'Product')}
+                      <div lang={lang} style={{ fontWeight: 700, fontSize: 'calc(13.5px * var(--font-scale))', lineHeight: 1.3 }}>
+                        {P(o.product, 'title') || t('सामान', 'Product')}
                       </div>
                       <div className="muted" style={{ fontSize: 'calc(11px * var(--font-scale))', marginTop: 3 }}>
                         {o.customer_name} · {o.quantity} {t('पीस', 'pcs')}

@@ -19,12 +19,15 @@ import io
 import json
 import os
 import random
+import re
 import sys
 import urllib.error
 import urllib.parse
 import urllib.request
 
 BASE = os.environ.get("PAVHAN_URL", "http://127.0.0.1:8000").rstrip("/")
+
+DEVANAGARI = re.compile(r"[\u0900-\u097F]")
 
 PASS, FAIL = [], []
 
@@ -565,6 +568,99 @@ def main() -> int:
                             {"to": "shipped"})
     check("an order can be advanced", moved["status"] == "shipped")
     check("each move is timestamped", len(moved["timeline"]) >= 1)
+
+    print("\n[no name is defined twice]")
+    # `nlp.py` carried TranscriptFacts and PRODUCT_NOUNS twice, byte for byte.
+    # Python keeps the second and says nothing, which is exactly why it
+    # survived — the same silent failure as the duplicate "mr" key that once
+    # made Marathi resolve to Hindi. Source-level, because a live server
+    # cannot see it.
+    import ast
+    import pathlib
+    services = pathlib.Path(__file__).resolve().parent.parent / "app"
+    dupes = []
+    for source in sorted(services.rglob("*.py")):
+        try:
+            tree = ast.parse(source.read_text(encoding="utf-8"))
+        except SyntaxError:  # pragma: no cover
+            continue
+        seen: dict[str, int] = {}
+        for node in tree.body:
+            names = []
+            if isinstance(node, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
+                names = [node.name]
+            elif isinstance(node, ast.Assign):
+                names = [t.id for t in node.targets if isinstance(t, ast.Name)]
+            for name in names:
+                if name in seen:
+                    dupes.append(f"{source.name}:{name} "
+                                 f"(lines {seen[name]} and {node.lineno})")
+                seen[name] = node.lineno
+    check("no module defines the same top-level name twice",
+          not dupes, f"{len(list(services.rglob('*.py')))} files" if not dupes
+          else "; ".join(dupes[:3]))
+
+    print("\n[Hindi is a real second half, not a stub]")
+    HI_FIELDS = ["title_hi", "short_description_hi", "detailed_description_hi",
+                 "story_hi", "care_hi"]
+    EN_FIELDS = ["title", "short_description", "detailed_description",
+                 "story", "care"]
+    # Product codes and units that legitimately stay in Latin script.
+    ALLOWED_LATIN = re.compile(
+        r"\b(GI|PAVHAN|UPI|GST|HSN|ONDC|GeM|INR|cm|mm|kg|ml)\b")
+
+    def latin_left(text: str) -> list[str]:
+        return re.findall(r"[A-Za-z][A-Za-z'\-]*",
+                          ALLOWED_LATIN.sub("", text or ""))
+
+    catalogue = get("/api/products?limit=50")
+    blank = [(p["title"], f) for p in catalogue for f in HI_FIELDS
+             if not (p.get(f) or "").strip()]
+    check("every seeded listing has all five Hindi fields",
+          not blank, f"{len(catalogue)} listings" if not blank
+          else f"{len(blank)} blank, e.g. {blank[0]}")
+
+    # This is the bug the artisan actually reported: Hindi that was half
+    # English. A Hindi field with a Latin word in it reads as broken, and the
+    # Hindi voice then mispronounces exactly that word.
+    mixed = [(p["title"][:30], f, latin_left(p.get(f) or ""))
+             for p in catalogue for f in HI_FIELDS if latin_left(p.get(f) or "")]
+    check("no Hindi field contains a stray English word",
+          not mixed, "all clean" if not mixed else f"{len(mixed)} mixed, e.g. {mixed[0]}")
+
+    english_blank = [(p["title"], f) for p in catalogue for f in EN_FIELDS
+                     if not (p.get(f) or "").strip()]
+    check("the English half is untouched", not english_blank,
+          "" if not english_blank else str(english_blank[0]))
+
+    # And the live path, not just the seed.
+    generated = post_multipart("/api/ai/generate-listing", {
+        "transcript": "yeh neela jaipur blue pottery ka guldasta hai, nau inch tall, "
+                      "teen din laga banane me, Jaipur se",
+        "language": "hi", "use_llm": "true"})
+    check("a spoken listing comes back with Hindi as well as English",
+          all((generated.get(f) or "").strip() for f in HI_FIELDS),
+          generated.get("title_hi", ""))
+    gen_mixed = {f: latin_left(generated.get(f) or "") for f in HI_FIELDS}
+    gen_mixed = {f: v for f, v in gen_mixed.items() if v}
+    check("the generated Hindi has no English in it",
+          not gen_mixed, "clean" if not gen_mixed else str(gen_mixed))
+    check("the Hindi is written, not transliterated from the English",
+          generated["title_hi"] != generated["title"]
+          and generated["detailed_description_hi"] != generated["detailed_description"])
+    check("the English is still English",
+          not DEVANAGARI.search(generated["title"] + generated["detailed_description"]))
+
+    # An artisan who speaks Marathi or Tamil still gets an English + Hindi
+    # listing, because those are the two the catalogue publishes in.
+    for tongue, sample in (("mr", "ha nila jaipur blue pottery cha guldasta aahe"),
+                           ("ta", "idhu neela jaipur blue pottery jaadi")):
+        other = post_multipart("/api/ai/generate-listing", {
+            "transcript": sample, "language": tongue, "use_llm": "true"})
+        check(f"a {tongue} speaker still gets Hindi copy",
+              bool((other.get("title_hi") or "").strip())
+              and not latin_left(other["title_hi"]),
+              other.get("title_hi", ""))
 
     print("\n[payments — money actually reaching the artisan]")
     artisans = [u for u in get("/api/users") if u["role"] == "artisan"]

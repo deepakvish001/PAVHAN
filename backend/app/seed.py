@@ -23,6 +23,7 @@ from .models import (
     PoolMember, Product, Quote, Shipment, StallCard, User,
 )
 from .services.fairs import KNOWN_FAIRS, new_code
+from .services.listing import hindi_listing
 from .services.pricing import recommend_price
 from .services.taxonomy import CRAFT_INDEX
 
@@ -336,6 +337,15 @@ def seed(db: Session, *, force: bool = False) -> dict:
                 f"Because it is made by hand, small variations are part of the piece."
             ),
             story=f"This piece was {craft.story_hook}.",
+            # The Hindi half, built by the same functions the live voice flow
+            # uses. The seed used to write English only and leave these blank,
+            # so an artisan who set the app to Hindi browsed a catalogue that
+            # was entirely in English — the one language the app exists to
+            # avoid making them read.
+            **hindi_listing(
+                craft, colour=colour, region=artisan.region, noun=noun,
+                size=size, weight=weight, making_days=days,
+            ),
             craft_type=craft.name,
             category=craft.category,
             material=craft.default_material,

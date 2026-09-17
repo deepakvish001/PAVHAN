@@ -80,7 +80,7 @@ Other modes:
 ```bash
 ./run.sh dev        # two ports with hot reload: API :8000, app :5173
 ./run.sh backend    # API only
-./run.sh test       # 165-check API smoke test against a running server
+./run.sh test       # 175-check API smoke test against a running server
 ```
 
 ### Optional: connect Claude
@@ -468,6 +468,18 @@ artisan knows what to fix.
 
 ## Everything is bilingual, including the reasoning
 
+**Both halves are written, and both halves are shown.** Every listing carries
+`title` and `title_hi`, `story` and `story_hi`, and the app renders whichever
+belongs to the reader — on the cards, the product page, the order list, the
+artisan's own catalogue, and in what the voice reads aloud. Hindi that exists
+in the database and never reaches the screen is not a Hindi app.
+
+The Hindi is composed, not translated: the same facts, assembled into Hindi
+sentences, because a literal translation of English marketing copy reads like
+a form rather than a person. And it is Hindi the whole way down — a Hindi field
+containing a stray English word is a test failure, because the one word an
+artisan would have recognised is the one a Hindi voice then mispronounces.
+
 This is not a UI string table. The pricing breakdown notes, the market season
 labels, the comparables, the buyer match explanations, the photo coaching and the
 gaps all exist in Hindi and English, because an explanation an artisan cannot
@@ -570,7 +582,7 @@ Full interactive documentation at `/docs`. The endpoints that matter:
 ./run.sh test
 ```
 
-165 checks covering the claims this project actually makes: two different photos
+175 checks covering the claims this project actually makes: two different photos
 must read differently, two different voice notes must produce different crafts
 and different prices, a Hindi query and an English query must find the same
 listing, every engine explanation must exist in both languages, different
@@ -578,7 +590,8 @@ products must match different buyers, a quote that is accepted must produce a
 real order, an impact report must refuse to publish an uplift figure it cannot
 stand behind, held money must refuse to be released before delivery, a pooled
 order's payouts must add up to the rupee, Jharkhand must not be mistaken for
-Bihar, and a listing sent twice from the outbox must arrive once.
+Bihar, a listing sent twice from the outbox must arrive once, and no Hindi
+field anywhere in the catalogue may contain an English word.
 
 The suite reseeds the catalogue before it starts and uses a fresh phone number
 each run, so it passes twice in a row on the same server rather than tripping

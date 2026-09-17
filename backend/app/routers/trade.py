@@ -305,6 +305,7 @@ def artisan_orders(artisan_id: str, db: Session = Depends(get_db)) -> dict:
             "customer_name": o.customer_name, "created_at": o.created_at,
             "timeline": o.timeline or [],
             "product": {"id": product.id, "title": product.title,
+                        "title_hi": product.title_hi,
                         "image": (product.images or [None])[0]} if product else None,
         })
 

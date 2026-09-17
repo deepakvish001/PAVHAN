@@ -1200,7 +1200,7 @@ function MarketModelCard({ pricing }) {
 // Step 4 — publish and match buyers
 // ===========================================================================
 function PublishStep({ listing, saved, setSaved, matches, setMatches, onDone }) {
-  const { t, lang, say, sayRaw, toast, user, setUser } = useApp()
+  const { t, lang, say, sayRaw, toast, user, setUser, P } = useApp()
   const [busy, setBusy] = useState(false)
   const [sent, setSent] = useState({})
   const started = useRef(false)
@@ -1306,7 +1306,9 @@ function PublishStep({ listing, saved, setSaved, matches, setMatches, onDone }) 
             <div style={{ fontWeight: 700, fontSize: 'calc(14px * var(--font-scale))' }} lang={lang}>
               {t('आपका सामान अब सबको दिख रहा है', 'Your listing is live')}
             </div>
-            <div style={{ fontSize: 'calc(12px * var(--font-scale))', color: '#145244', marginTop: 2 }}>{saved?.title}</div>
+            <div lang={lang} style={{ fontSize: 'calc(12px * var(--font-scale))', color: '#145244', marginTop: 2 }}>
+              {P(saved, 'title')}
+            </div>
           </div>
         </div>
       </div>

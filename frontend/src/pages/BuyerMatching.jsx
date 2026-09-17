@@ -12,7 +12,7 @@ import { listProducts, listUsers, matchBuyers, sendEnquiry } from '../api/client
  */
 export default function BuyerMatching() {
   const [params] = useSearchParams()
-  const { t, lang, user, setUser, toast } = useApp()
+  const { t, lang, user, setUser, toast, P } = useApp()
   const [products, setProducts] = useState([])
   const [selected, setSelected] = useState(params.get('product') || null)
   const [data, setData] = useState(null)
@@ -99,7 +99,8 @@ export default function BuyerMatching() {
                       <ProductImage product={p} height={72} radius={0} style={{ width: '100%' }} />
                       <div style={{ padding: '7px 8px 9px' }}>
                         <div style={{ fontSize: 'calc(10.5px * var(--font-scale))', fontWeight: 700, lineHeight: 1.35, minHeight: 28 }}>
-                          {p.title.length > 30 ? `${p.title.slice(0, 28)}…` : p.title}
+                          {(() => { const ttl = P(p, 'title')
+                            return ttl.length > 30 ? `${ttl.slice(0, 28)}…` : ttl })()}
                         </div>
                         <div className="mono muted" style={{ fontSize: 'calc(10px * var(--font-scale))', marginTop: 3 }}>
                           {rupees(p.price)}

@@ -624,6 +624,11 @@ CATEGORY_HI = {
 }
 
 MATERIAL_HI = {
+    "Muga Silk": "मूगा रेशम", "Mulberry Silk with Zari": "शहतूती रेशम और ज़री",
+    "Cotton with Silk Thread": "सूती कपड़ा और रेशमी धागा",
+    "Ikat-dyed Silk Cotton": "इकत रंगा रेशम-सूत",
+    "Bandha-dyed Cotton": "बंधा रंगा सूती",
+    "Tie-dyed Cotton or Silk": "बंधेज सूती या रेशम",
     "Pure Silk": "शुद्ध रेशम", "Cotton": "सूती", "Mulmul": "मलमल",
     "Pashmina Wool": "पश्मीना ऊन", "Wool": "ऊन", "Khadi": "खादी",
     "Terracotta Clay": "टेराकोटा मिट्टी", "Quartz Ceramic": "क्वार्ट्ज़ सिरेमिक",
@@ -646,7 +651,14 @@ MATERIAL_HI = {
 }
 
 REGION_HI = {
+    # Every place any craft in this file names. A missing entry is not a
+    # cosmetic gap: `_hi()` falls back to the English token, so one absent
+    # region drops a Latin word into the middle of a Hindi sentence.
     "Varanasi": "वाराणसी", "Banaras": "बनारस", "Uttar Pradesh": "उत्तर प्रदेश",
+    "Kanchipuram": "कांचीपुरम", "Bhoodan Pochampally": "भूदान पोचमपल्ली",
+    "Telangana": "तेलंगाना", "Jamnagar": "जामनगर", "Sambalpur": "संबलपुर",
+    "Bargarh": "बरगढ़", "Sualkuchi": "सुआलकुची", "Dharwad": "धारवाड़",
+    "Hubli": "हुबली",
     "Srinagar": "श्रीनगर", "Kashmir": "कश्मीर", "Jammu and Kashmir": "जम्मू-कश्मीर",
     "Jaipur": "जयपुर", "Rajasthan": "राजस्थान", "Jodhpur": "जोधपुर",
     "Udaipur": "उदयपुर", "Nathdwara": "नाथद्वारा", "Bidar": "बीदर",
@@ -673,6 +685,16 @@ ORG_TYPE_HI = {
 }
 
 TECHNIQUE_HI = {
+    # The first word of every craft name, because that is what the detailed
+    # Hindi description reaches for when the artisan names a technique.
+    "Banarasi": "बनारसी", "Kashmiri": "कश्मीरी", "Jaipur": "जयपुर",
+    "Terracotta": "टेराकोटा", "Madhubani": "मधुबनी", "Pattachitra": "पट्टचित्र",
+    "Dhokra": "ढोकरा", "Bidriware": "बिदरी", "Channapatna": "चन्नापटना",
+    "Lucknawi": "लखनवी", "Warli": "वारली", "Phulkari": "फुलकारी",
+    "Pichwai": "पिछवाई", "Meenakari": "मीनाकारी", "Bamboo": "बाँस",
+    "Jute": "जूट", "Kalamkari": "कलमकारी", "Kanjeevaram": "कांजीवरम",
+    "Pochampally": "पोचमपल्ली", "Bandhani": "बंधनी", "Sambalpuri": "संबलपुरी",
+    "Kantha": "कांथा", "Kasuti": "कसूती", "Assam": "असमिया",
     "Handwoven": "हाथ से बुना", "Handloom": "हथकरघा", "Hand-painted": "हाथ से चित्रित",
     "Hand Embroidery": "हाथ की कढ़ाई", "Hand-carved": "हाथ से तराशा",
     "Block Printed": "ब्लॉक छपाई", "Hand-moulded": "हाथ से ढाला",

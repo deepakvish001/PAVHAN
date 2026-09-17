@@ -66,6 +66,50 @@ def get_product(product_id: str, db: Session = Depends(get_db)) -> Product:
     return product
 
 
+def _fill_hindi(product: Product) -> None:
+    """Give a listing its Hindi half if whoever created it did not.
+
+    The voice flow always sends both halves, so this looks redundant — and it
+    is exactly what was missing everywhere else. The seed catalogue, the smoke
+    suite, the offline outbox's replay and any future bulk import all reach
+    `POST /api/products` directly, and every one of them was quietly
+    publishing English-only listings that an artisan browsing in Hindi then
+    could not read.
+
+    Putting it here rather than in each caller makes it a property of the
+    catalogue instead of a habit of whoever writes the next importer. Existing
+    Hindi is never overwritten: a listing the artisan has edited beats a
+    generated sentence every time.
+    """
+    from ..services.listing import hindi_listing
+    from ..services.taxonomy import CRAFTS
+
+    if all(getattr(product, f) for f in
+           ("title_hi", "short_description_hi", "detailed_description_hi",
+            "story_hi", "care_hi")):
+        return
+
+    craft = next((c for c in CRAFTS if c.name == product.craft_type), None)
+    if craft is None:
+        # No recognised craft means no craft vocabulary to write Hindi from,
+        # and inventing one would be worse than the English fallback the app
+        # already falls back to on screen.
+        return
+
+    generated = hindi_listing(
+        craft,
+        colour=product.colour or "",
+        region=product.region or "",
+        noun=(product.title or "").split()[-1] if product.title else "",
+        size=product.size or "",
+        weight=product.weight or "",
+        making_days=None,
+    )
+    for field, value in generated.items():
+        if not getattr(product, field, "") and value:
+            setattr(product, field, value)
+
+
 @router.post("", response_model=ProductOut, status_code=201)
 def create_product(payload: ProductCreate, db: Session = Depends(get_db)) -> Product:
     if payload.artisan_id and not db.get(User, payload.artisan_id):
@@ -84,6 +128,7 @@ def create_product(payload: ProductCreate, db: Session = Depends(get_db)) -> Pro
             return existing
 
     product = Product(**payload.model_dump())
+    _fill_hindi(product)
     db.add(product)
     db.commit()
     db.refresh(product)

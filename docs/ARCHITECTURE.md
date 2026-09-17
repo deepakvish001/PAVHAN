@@ -408,6 +408,80 @@ It now answers `{"shipment": null}`, and the caller catches only real errors and
 tells the artisan about them. The browser drive asserts zero console errors,
 which is how this was found at all.
 
+## The Hindi was written, stored, and never shown
+
+The report was "the Hindi description is not working", and it turned out to be
+three separate bugs wearing one coat.
+
+**The app never rendered the Hindi at all.** `ProductDetail`, `ProductCard`,
+`MyProducts`, `ArtisanHome`, `BuyerMatching` and `Orders` all read
+`product.title` and `product.short_description` — the English columns — no
+matter what language the interface was set to. The generator had been
+producing good Hindi for months, the database had been storing it, and every
+screen showed the English. Fixed with one helper, `P(product, field)`, in
+`AppContext`: it returns the `_hi` column in Hindi and falls back to English
+when that column is empty, because a blank title is worse than a foreign one
+and listings made before the Hindi generator existed still have to render.
+
+**The seed catalogue had no Hindi to show.** `seed.py` hand-wrote English
+strings and left every `_hi` column blank, so even after the screens were
+fixed the demo catalogue stayed English. It now calls `hindi_listing()` — a
+new entry point that packs known facts into the same `TranscriptFacts` the
+voice flow builds and runs the same builders. One set of Hindi, one place to
+improve it. The same function now also runs in `POST /api/products`, so the
+outbox's replay, the smoke suite and any future bulk import get Hindi without
+each having to remember to.
+
+**What Hindi there was, was mixed.** This is the part the artisan actually
+sees, and it had four sources:
+
+* `craft.unit` is an English word — "painting", "figurine", "piece" — and it
+  was the fallback when an artisan's noun was unrecognised. It produced
+  `पीला मधुबनी चित्रकला painting`. Now `UNIT_HI` maps every unit.
+* The noun lookup was exact-match only, so "Wall Painting", "Dinner Plate Set"
+  and "Meenakari Jhumka" all missed. `_noun_hi()` now tries the phrase, then
+  its last word, then any known noun inside it, longest first.
+* `_hi()` falls back to the English token, and nine regions, six materials and
+  twenty-four technique names had no entry — each one a Latin word dropped
+  into the middle of a Hindi sentence. The tables are now complete for
+  everything the taxonomy can produce.
+* `_measure_hi()` translated units but not qualifiers, so "9 inch tall" became
+  "9 इंच tall". `UNITS_HI` now carries tall, wide, long, each, drop, chest and
+  the rest, matched longest-first and case-insensitively.
+
+Behind all four sits one rule: `LATIN = re.compile(r"[A-Za-z]")`, and any part
+that still matches after every lookup is **dropped rather than shown**. A
+slightly shorter Hindi title reads as Hindi; one English word in the middle of
+it reads as a bug.
+
+**And the voice was reading English out loud in a Hindi accent.** Two places
+built a Hindi sentence around raw English data — `ProductDetail`'s arrival
+line interpolated `p.region` ("यह Madhubani में हाथ से बनाई गई है") and its
+`VoiceOrb` read the English title and description inside a Hindi frame. Both
+now speak what the screen shows. This was invisible to any DOM assertion, so
+the browser test installs a fake `speechSynthesis` that records utterances
+instead of playing them, and asserts the recorded text is Devanagari. Note the
+stub must be installed with `Object.defineProperty` — `window.speechSynthesis`
+is a prototype accessor and a plain assignment is silently ignored.
+
+While stubbing it, one production fix fell out: `utter.voice = voice` is now
+wrapped in a try/catch, because a voice handle taken before a `voiceschanged`
+event can be rejected as stale, and an exception there silences the assistant
+for the rest of the session.
+
+The suite now asserts, over the whole catalogue and over freshly generated
+listings, that every Hindi field exists, that none contains a Latin word, and
+— the constraint the artisan set explicitly — that the English is untouched.
+
+## Dead code that had been copied, not written
+
+`nlp.py` contained `TranscriptFacts` and `PRODUCT_NOUNS` **twice**, byte for
+byte, 49 lines apart. Python silently keeps the second, so nothing
+misbehaved — which is precisely why it survived. It is the same failure mode
+as the duplicate `"mr"` key that once made Marathi resolve to Hindi, and the
+same remedy applies: an AST walk over the module now asserts no top-level name
+is defined more than once.
+
 ## Things a reviewer should know are deliberate
 
 - **SQLite, not Postgres.** One file, no service to start, trivially resettable

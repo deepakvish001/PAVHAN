@@ -78,7 +78,12 @@ export default function useVoiceAssistant({ lang = 'hi', enabled = true } = {}) 
 
     const utter = new SpeechSynthesisUtterance(text)
     const voice = pickVoice(voicesRef.current, opts.lang || lang)
-    if (voice) utter.voice = voice
+    // Wrapped, because assigning a voice can throw: the list is refreshed on
+    // `voiceschanged` and a handle taken before that event can be rejected as
+    // stale. An exception here would silence the assistant for the rest of
+    // the session, and the utterance still speaks in the default voice with
+    // `lang` alone set.
+    if (voice) { try { utter.voice = voice } catch { /* stale handle */ } }
     utter.lang = voice?.lang || ((opts.lang || lang) === 'hi' ? 'hi-IN' : 'en-IN')
     // Slightly slow: these are instructions, and many users are hearing a
     // screen read to them for the first time.

@@ -7,7 +7,7 @@ import { listProducts, listUsers, priceForProduct } from '../api/client'
 
 export default function MyProducts() {
   const navigate = useNavigate()
-  const { t, lang, user, setUser, L } = useApp()
+  const { t, lang, user, setUser, L, P } = useApp()
   const [products, setProducts] = useState(null)
   const [repriced, setRepriced] = useState({})
 
@@ -63,7 +63,7 @@ export default function MyProducts() {
                   >
                     <ProductImage product={p} height={78} style={{ width: 78 }} />
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 700, fontSize: 'calc(14px * var(--font-scale))', lineHeight: 1.3 }}>{p.title}</div>
+                      <div lang={lang} style={{ fontWeight: 700, fontSize: 'calc(14px * var(--font-scale))', lineHeight: 1.3 }}>{P(p, 'title')}</div>
                       <div className="muted" style={{ fontSize: 'calc(11.5px * var(--font-scale))', margin: '3px 0 6px' }}>
                         {L(p.material)} · {L(p.region)}
                       </div>

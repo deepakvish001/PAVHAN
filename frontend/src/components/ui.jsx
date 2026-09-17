@@ -180,8 +180,11 @@ export function ProductImage({ product, height = 96, radius = 14, style = {} }) 
 
 export function ProductCard({ product, onClick, compact = false }) {
   const navigate = useNavigate()
-  const { t, L } = useApp()
+  const { t, L, P, lang } = useApp()
   const go = onClick || (() => navigate(`/product/${product.id}`))
+  // The card is where most people meet a listing, so it is the first place
+  // that has to be in their language.
+  const title = P(product, 'title')
 
   if (compact) {
     return (
@@ -192,8 +195,8 @@ export function ProductCard({ product, onClick, compact = false }) {
       >
         <ProductImage product={product} height={116} radius={0} style={{ width: '100%' }} />
         <div style={{ padding: '9px 10px 11px' }}>
-          <div style={{ fontSize: 'calc(12.5px * var(--font-scale))', fontWeight: 700, lineHeight: 1.35, minHeight: 34 }}>
-            {product.title.length > 38 ? `${product.title.slice(0, 36)}…` : product.title}
+          <div lang={lang} style={{ fontSize: 'calc(12.5px * var(--font-scale))', fontWeight: 700, lineHeight: 1.35, minHeight: 34 }}>
+            {title.length > 38 ? `${title.slice(0, 36)}…` : title}
           </div>
           <div style={{ fontSize: 'calc(10.5px * var(--font-scale))', color: 'var(--muted)', margin: '3px 0 6px' }}>
             {L(product.region)}
@@ -212,7 +215,7 @@ export function ProductCard({ product, onClick, compact = false }) {
     >
       <ProductImage product={product} height={86} style={{ width: 86 }} />
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <div style={{ fontWeight: 700, fontSize: 'calc(14.5px * var(--font-scale))', lineHeight: 1.3 }}>{product.title}</div>
+        <div lang={lang} style={{ fontWeight: 700, fontSize: 'calc(14.5px * var(--font-scale))', lineHeight: 1.3 }}>{title}</div>
         <div style={{ fontSize: 'calc(11.5px * var(--font-scale))', color: 'var(--muted)' }}>
           {L(product.craft_type)} · {L(product.region)}
         </div>

@@ -106,7 +106,8 @@ def dashboard(artisan_id: str, db: Session = Depends(get_db)) -> dict:
             for o in sorted(orders, key=lambda o: o.created_at, reverse=True)[:5]
         ],
         "top_products": [
-            {"id": p.id, "title": p.title, "views": p.views, "price": p.price,
+            {"id": p.id, "title": p.title, "title_hi": p.title_hi,
+             "views": p.views, "price": p.price,
              "quality_score": p.quality_score, "image": (p.images or [None])[0]}
             for p in sorted(products, key=lambda p: -p.views)[:5]
         ],
@@ -137,6 +138,7 @@ def create_order(payload: OrderCreate, db: Session = Depends(get_db)) -> dict:
         "platform_fee": round(amount - payout, 2),
         "artisan_share_percent": round((1 - PLATFORM_FEE) * 100, 1),
         "status": order.status, "product": product.title,
+        "product_hi": product.title_hi,
     }
 
 

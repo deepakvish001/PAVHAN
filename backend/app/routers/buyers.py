@@ -45,7 +45,8 @@ def match_for_product(
 
     return {
         "product": {
-            "id": product.id, "title": product.title, "price": product.price,
+            "id": product.id, "title": product.title,
+            "title_hi": product.title_hi, "price": product.price,
             "category": product.category, "craft_type": product.craft_type,
             "image": (product.images or [None])[0],
         },
@@ -81,7 +82,8 @@ def recommended_products(buyer_id: str, db: Session = Depends(get_db), limit: in
         matches = match_buyers(p, [buyer], limit=1)
         if matches:
             scored.append({
-                "product_id": p.id, "title": p.title, "price": p.price,
+                "product_id": p.id, "title": p.title, "title_hi": p.title_hi,
+                "price": p.price,
                 "image": (p.images or [None])[0], "region": p.region,
                 "craft_type": p.craft_type, "moq": p.moq,
                 "score": matches[0].score, "fit_label": matches[0].fit_label,
@@ -129,7 +131,7 @@ def enquiries_for_artisan(artisan_id: str, db: Session = Depends(get_db)) -> dic
             {
                 "id": e.id, "status": e.status, "quantity": e.quantity,
                 "estimated_value": e.estimated_value, "created_at": e.created_at,
-                "product": {"id": p.id, "title": p.title},
+                "product": {"id": p.id, "title": p.title, "title_hi": p.title_hi},
                 "buyer": {"id": b.id, "name": b.name, "city": b.city, "logo": b.logo},
             }
             for e, p, b in rows

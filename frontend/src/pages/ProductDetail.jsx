@@ -10,7 +10,7 @@ import { getProduct, placeOrder, shareProduct, similarProducts } from '../api/cl
 export default function ProductDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { t, lang, role, toast, sayRaw, voiceOn } = useApp()
+  const { t, lang, role, toast, sayRaw, voiceOn, L, P } = useApp()
   const [product, setProduct] = useState(null)
   const [similar, setSimilar] = useState([])
   const [busy, setBusy] = useState(false)
@@ -23,15 +23,19 @@ export default function ProductDetail() {
       if (!alive) return
       setProduct(p)
       if (voiceOn) {
+        // The region has to go through L() before it is spoken. A Hindi
+        // sentence with a raw "Madhubani" dropped into it is read out by a
+        // Hindi voice, which mangles the one word in it the artisan would
+        // have recognised — and it is the same mixing the screen used to do.
         setTimeout(() => sayRaw(
-          t(`यह ${p.region} में हाथ से बनाई गई है। कीमत ${Math.round(p.price)} रुपये।`,
+          t(`यह ${L(p.region)} में हाथ से बनाई गई है। कीमत ${Math.round(p.price)} रुपये।`,
             `This piece was handmade in ${p.region}. The price is ${Math.round(p.price)} rupees.`),
         ), 700)
       }
     }).catch(() => {})
     similarProducts(id).then((s) => { if (alive) setSimilar(s) }).catch(() => {})
     return () => { alive = false }
-  }, [id]) // eslint-disable-line
+  }, [id, L]) // eslint-disable-line
 
   if (!product) {
     return (<><TopBar title="…" back /><Screen><Loading /></Screen></>)
@@ -68,12 +72,15 @@ export default function ProductDetail() {
           <div className="card">
             <div className="row" style={{ gap: 6, flexWrap: 'wrap', marginBottom: 9 }}>
               {product.gi_tagged && <span className="pill leaf">🏅 GI {t('प्रमाणित', 'tagged')}</span>}
-              <span className="pill">{product.category}</span>
+              <span className="pill" lang={lang}>{L(product.category)}</span>
               {product.handmade && <span className="pill gold">✋ {t('हस्तनिर्मित', 'Handmade')}</span>}
             </div>
-            <h2 style={{ fontSize: 'calc(20px * var(--font-scale))', lineHeight: 1.28 }}>{product.title}</h2>
-            <p className="muted" style={{ fontSize: 'calc(13px * var(--font-scale))', lineHeight: 1.6, margin: '8px 0 0' }}>
-              {product.short_description}
+            <h2 lang={lang} style={{ fontSize: 'calc(20px * var(--font-scale))', lineHeight: 1.28 }}>
+              {P(product, 'title')}
+            </h2>
+            <p className="muted" lang={lang}
+               style={{ fontSize: 'calc(13px * var(--font-scale))', lineHeight: 1.6, margin: '8px 0 0' }}>
+              {P(product, 'short_description')}
             </p>
             <div className="row-between" style={{ marginTop: 14 }}>
               <div>
@@ -110,13 +117,14 @@ export default function ProductDetail() {
             </div>
           </div>
 
-          {product.story && (
+          {P(product, 'story') && (
             <div className="card tinted">
               <div style={{ fontWeight: 700, fontSize: 'calc(13px * var(--font-scale))', marginBottom: 6 }} lang={lang}>
                 📖 {t('इसकी कहानी', 'The story')}
               </div>
-              <div style={{ fontSize: 'calc(13px * var(--font-scale))', lineHeight: 1.7, color: 'var(--ink-soft)' }}>
-                {product.story}
+              <div lang={lang}
+                   style={{ fontSize: 'calc(13px * var(--font-scale))', lineHeight: 1.7, color: 'var(--ink-soft)' }}>
+                {P(product, 'story')}
               </div>
             </div>
           )}
@@ -125,19 +133,23 @@ export default function ProductDetail() {
             <div style={{ fontWeight: 700, fontSize: 'calc(13.5px * var(--font-scale))', marginBottom: 10 }} lang={lang}>
               {t('पूरा विवरण', 'Details')}
             </div>
-            <p style={{ fontSize: 'calc(13px * var(--font-scale))', lineHeight: 1.7, margin: '0 0 12px', color: 'var(--ink-soft)' }}>
-              {product.detailed_description}
+            <p lang={lang}
+               style={{ fontSize: 'calc(13px * var(--font-scale))', lineHeight: 1.7, margin: '0 0 12px', color: 'var(--ink-soft)' }}>
+              {P(product, 'detailed_description')}
             </p>
             {[
-              [t('सामग्री', 'Material'), product.material],
-              [t('तकनीक', 'Technique'), product.technique],
-              [t('रंग', 'Colour'), product.colour],
+              // The values are data tokens, not prose, so they go through L()
+              // — the same table the rest of the app translates "Silk" and
+              // "Varanasi" with. Care is prose and has its own Hindi field.
+              [t('सामग्री', 'Material'), L(product.material)],
+              [t('तकनीक', 'Technique'), L(product.technique)],
+              [t('रंग', 'Colour'), L(product.colour)],
               [t('नाप', 'Size'), product.size],
               [t('वज़न', 'Weight'), product.weight],
-              [t('कहाँ से', 'Origin'), product.region],
+              [t('कहाँ से', 'Origin'), L(product.region)],
               [t('तैयार होने में', 'Lead time'), `${product.lead_time_days} ${t('दिन', 'days')}`],
               [t('कम से कम मात्रा', 'MOQ'), product.moq],
-              [t('रख-रखाव', 'Care'), product.care],
+              [t('रख-रखाव', 'Care'), P(product, 'care')],
             ].filter(([, v]) => v).map(([label, value]) => (
               <div
                 key={label}
@@ -240,9 +252,14 @@ export default function ProductDetail() {
             </>
           )}
         </div>
+        {/* The voice used to build a Hindi sentence around the English title
+            and English description, so a Hindi speaker heard a Hindi frame
+            with English words dropped into the middle of it — read out by a
+            Hindi voice, which mangles them. It now speaks the same text the
+            screen is showing. */}
         <VoiceOrb
           text={t(
-            `${product.title}। ${product.short_description} कीमत ${Math.round(product.price)} रुपये, जिसमें से ${Math.round(product.price * 0.95)} रुपये सीधे कारीगर को जाते हैं।`,
+            `${P(product, 'title')}। ${P(product, 'short_description')} कीमत ${Math.round(product.price)} रुपये, जिसमें से ${Math.round(product.price * 0.95)} रुपये सीधे कारीगर को जाते हैं।`,
             `${product.title}. ${product.short_description} It costs ${Math.round(product.price)} rupees, of which ${Math.round(product.price * 0.95)} goes straight to the artisan.`,
           )}
         />

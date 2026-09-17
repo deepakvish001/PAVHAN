@@ -210,55 +210,6 @@ PRODUCT_NOUNS = {
 }
 
 
-@dataclass
-class TranscriptFacts:
-    """Only what the artisan actually said."""
-
-    raw: str = ""
-    language: str = "hi"
-    colours: list[str] = field(default_factory=list)
-    materials: list[str] = field(default_factory=list)
-    techniques: list[str] = field(default_factory=list)
-    regions: list[str] = field(default_factory=list)
-    craft_scores: dict[str, float] = field(default_factory=dict)
-    size: str | None = None
-    weight: str | None = None
-    quantity: int | None = None
-    making_days: float | None = None
-    making_hours: float | None = None
-    expected_price: float | None = None
-    care: list[str] = field(default_factory=list)
-    product_noun: str | None = None
-    mentions_handmade: bool = False
-    mentions_natural_dye: bool = False
-    word_count: int = 0
-    completeness: int = 0
-    missing_fields: list[str] = field(default_factory=list)
-
-
-PRODUCT_NOUNS = {
-    "saree": "Saree", "sari": "Saree", "sadi": "Saree", "साड़ी": "Saree",
-    "dupatta": "Dupatta", "दुपट्टा": "Dupatta", "stole": "Stole", "scarf": "Scarf",
-    "shawl": "Shawl", "shaal": "Shawl", "शॉल": "Shawl",
-    "kurta": "Kurta", "कुर्ता": "Kurta", "kurti": "Kurti", "suit": "Suit Set",
-    "painting": "Painting", "चित्र": "Painting", "पेंटिंग": "Painting", "art": "Artwork",
-    "vase": "Vase", "गुलदस्ता": "Vase", "pot": "Pot", "matka": "Pot", "मटका": "Pot",
-    "bowl": "Bowl", "katori": "Bowl", "कटोरी": "Bowl", "plate": "Plate", "थाली": "Plate",
-    "diya": "Diya", "दीया": "Diya", "lamp": "Lamp", "लैंप": "Lamp",
-    "toy": "Toy", "khilona": "Toy", "खिलौना": "Toy",
-    "basket": "Basket", "tokri": "Basket", "टोकरी": "Basket",
-    "bag": "Bag", "thaila": "Bag", "थैला": "Bag", "jhola": "Bag",
-    "earring": "Earrings", "jhumka": "Jhumka", "झुमका": "Jhumka",
-    "necklace": "Necklace", "haar": "Necklace", "हार": "Necklace",
-    "bangle": "Bangles", "chudi": "Bangles", "चूड़ी": "Bangles",
-    "idol": "Idol", "murti": "Idol", "मूर्ति": "Idol", "figurine": "Figurine",
-    "quilt": "Quilt", "razai": "Quilt", "रज़ाई": "Quilt", "throw": "Throw",
-    "cushion": "Cushion Cover", "runner": "Table Runner", "rug": "Rug", "carpet": "Carpet",
-    "box": "Storage Box", "dabba": "Storage Box", "डिब्बा": "Storage Box",
-    "mask": "Mask", "मुखौटा": "Mask", "wall hanging": "Wall Hanging",
-}
-
-
 PRODUCT_NOUNS.update(regional.all_values(regional.NOUNS))
 HINDI_NUMBERS.update(regional.all_values(regional.NUMBERS))
 for _native, _english in regional.all_values(regional.UNITS).items():

@@ -8,7 +8,7 @@ export default function Profile() {
   const navigate = useNavigate()
   const { t, lang, setLang, role, setRole, user, voiceOn, setVoiceOn, assistant,
           sayRaw, L, pwa, theme, toggleTheme, fontScale, setFontScale,
-          contrast, setContrast } = useApp()
+          contrast, setContrast, voiceName, setVoiceName } = useApp()
   const [status, setStatus] = useState(null)
   const { setUser, toast } = useApp()
   const [stats, setStats] = useState(null)
@@ -131,7 +131,8 @@ export default function Profile() {
               </button>
             </div>
 
-            <HindiVoiceNote assistant={assistant} t={t} lang={lang} sayRaw={sayRaw} />
+            <HindiVoiceNote assistant={assistant} t={t} lang={lang} sayRaw={sayRaw}
+                            voiceName={voiceName} setVoiceName={setVoiceName} />
 
             <div className="row-between" style={{ marginBottom: 12 }}>
               <div style={{ fontWeight: 700, fontSize: 'calc(13.5px * var(--font-scale))' }} lang={lang}>
@@ -372,7 +373,7 @@ function PincodeCard({ user, setUser, t, lang, toast }) {
  * never has. Saying so on screen turns a mystery into a one-line
  * explanation — and shows that the app kept speaking Hindi anyway.
  */
-function HindiVoiceNote({ assistant, t, lang, sayRaw }) {
+function HindiVoiceNote({ assistant, t, lang, sayRaw, voiceName, setVoiceName }) {
   const [info, setInfo] = useState(null)
 
   useEffect(() => {
@@ -445,10 +446,80 @@ function HindiVoiceNote({ assistant, t, lang, sayRaw }) {
         </div>
       )}
       <button className="btn btn-soft btn-sm" style={{ marginTop: 9 }}
-              onClick={() => sayRaw('नमस्ते! यह पावहन की हिंदी आवाज़ है। आपका सामान अब पूरे भारत में दिखेगा।',
-                                    { lang: 'hi' })}>
+              onClick={() => sayRaw(SAMPLE, { lang: 'hi' })}>
         🔊 {t('हिंदी आवाज़ सुनकर देखिए', 'Test the Hindi voice')}
       </button>
+
+      {/* Accent is a matter of taste, and which engine is installed differs
+          on every machine. Rather than insisting the scoring table knows
+          best, offer what is actually on this device and let the listener
+          decide — with a sample of each, because nobody can pick a voice
+          from a name. */}
+      {info.choices?.length > 1 && (
+        <div style={{ marginTop: 11, paddingTop: 10, borderTop: '1px solid var(--line)' }}>
+          <div style={{ fontWeight: 700, fontSize: 'calc(12px * var(--font-scale))' }} lang={lang}>
+            {t('आवाज़ खुद चुनिए', 'Choose the voice yourself')}
+          </div>
+          <div className="muted" style={{ fontSize: 'calc(11px * var(--font-scale))', marginTop: 3, lineHeight: 1.45 }}
+               lang={lang}>
+            {t('हर आवाज़ सुनकर देखिए, जो सबसे अच्छी लगे वही रख लीजिए।',
+               'Listen to each one and keep whichever sounds best to you.')}
+          </div>
+
+          <div className="stack" style={{ gap: 7, marginTop: 9 }}>
+            {info.choices.map((choice) => {
+              const active = voiceName
+                ? choice.name === voiceName
+                : choice.name === info.voice
+              return (
+                <div key={choice.name} className="row" style={{ gap: 7, alignItems: 'center' }}>
+                  <button
+                    className="btn btn-soft btn-sm"
+                    style={{ minWidth: 44, padding: '0 10px' }}
+                    aria-label={t(`${choice.name} सुनिए`, `Listen to ${choice.name}`)}
+                    onClick={() => { setVoiceName(choice.name); sayRaw(SAMPLE, { lang: 'hi' }) }}
+                  >
+                    🔊
+                  </button>
+                  <button
+                    onClick={() => setVoiceName(choice.name)}
+                    className="card"
+                    style={{
+                      flex: 1, minWidth: 0, textAlign: 'left', padding: '8px 10px',
+                      borderColor: active ? 'var(--indigo)' : 'var(--line)',
+                    }}
+                  >
+                    <div style={{ fontWeight: active ? 800 : 600,
+                                  fontSize: 'calc(11.5px * var(--font-scale))', lineHeight: 1.35 }}>
+                      {active && '✓ '}{choice.name}
+                    </div>
+                    <div className="muted" style={{ fontSize: 'calc(10px * var(--font-scale))', marginTop: 2 }}
+                         lang={lang}>
+                      {choice.lang}
+                      {choice.readsHindi
+                        ? ` · ${t('हिंदी में बोलेगी', 'speaks Hindi')}`
+                        : ` · ${t('रोमन में बोलेगी', 'speaks romanised')}`}
+                      {choice.quality === 'natural' && ` · ${t('बढ़िया', 'natural')}`}
+                      {choice.quality === 'basic' && ` · ${t('बुनियादी', 'basic')}`}
+                    </div>
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+
+          {voiceName && (
+            <button className="btn btn-ghost btn-sm btn-block" style={{ marginTop: 8 }}
+                    onClick={() => setVoiceName('')}>
+              {t('अपने आप चुनने दीजिए', 'Let PAVHAN choose again')}
+            </button>
+          )}
+        </div>
+      )}
     </div>
   )
 }
+
+// Long enough to judge an accent by, short enough to listen to four times.
+const SAMPLE = 'नमस्ते! यह पावहन की हिंदी आवाज़ है। आपका सामान पूरे भारत में दिखेगा, '
+  + 'और पूरा दाम सीधे आपके पास आएगा।'

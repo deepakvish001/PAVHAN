@@ -537,13 +537,29 @@ thousand"). A pincode or a tracking number is deliberately left as digits: a
 pincode read as a quantity is wrong in a way that sends a parcel to the wrong
 state.
 
-**Long passages are split at the places a person pauses.** Chrome stops
-speaking after roughly fifteen seconds and fires no `onend`, so the guide
-simply goes quiet mid-sentence and never recovers — a decade-old bug, and a
-spectacular one to hit in front of a judge. Speech is now broken into
-utterances of at most 170 characters at sentence ends, and a pause-and-resume
-keep-alive runs while anything is in flight. The breaks double as natural
-pauses, so a long passage stops sounding like it is being read off a card.
+**Splitting is a repair, not an improvement.** Chrome stops speaking after
+roughly fifteen seconds and fires no `onend`, so a long passage goes quiet
+mid-sentence and never recovers. The guard against that is to break the text
+up — but every break is a seam where the voice restarts, so it happens as
+rarely as the limit allows: a chatbot answer, a product line and the whole
+welcome greeting are each spoken as **one unbroken utterance**. Only genuinely
+long passages are split, at sentence ends. The pause-and-resume keep-alive is
+likewise held back until a passage has already run longer than the limit would
+have cut, because `pause()`/`resume()` on a voice that is mid-word produces an
+audible click.
+
+**The voice vendor's own defaults are left alone.** A neural Hindi voice is
+already tuned to sound natural. The only adjustment kept is a small slowdown —
+these are instructions to somebody who may be hearing a screen read aloud for
+the first time — and a touch more of it where the text is romanised.
+
+**You can pick the voice yourself.** Accent is a matter of taste and of which
+engine happens to be installed, and no scoring table knows that better than
+the person listening. Profile lists every usable voice on the device with a
+sample button beside each, says what each one will do ("speaks Hindi" /
+"speaks romanised", natural / standard / basic), and remembers the choice. A
+US English voice is never offered for Hindi, because it is the thing this
+whole feature exists to avoid.
 
 **Profile tells you which mode this device is in**, names the voice being
 used and rates it (natural / standard / basic), and has a button to hear it —

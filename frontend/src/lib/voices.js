@@ -101,7 +101,25 @@ export function rankVoices(voices, want) {
  * no Devanagari-capable voice needs both an English voice *and* romanised
  * text, and letting those be chosen separately is how they drift apart.
  */
-export function chooseVoice(voices, want) {
+export function chooseVoice(voices, want, preferred = '') {
+  // A person's ear beats any scoring table. When they have picked a voice on
+  // this device, and it is still installed, it wins outright — accent is a
+  // matter of taste and of which engine happens to be on the machine, and
+  // neither is something this file can know better than the listener.
+  if (preferred) {
+    const chosen = (voices || []).find((v) => v.name === preferred)
+    if (chosen) {
+      const tag = `${chosen.lang || ''}`.toLowerCase().replace('_', '-')
+      const indic = /^(hi|mr|ne|sa)/.test(tag)
+      return {
+        voice: chosen,
+        romanise: want === 'hi' && !indic,
+        quality: describe(chosen),
+        picked: true,
+      }
+    }
+  }
+
   if (want === 'hi') {
     const indic = rankVoices(voices, 'hi')
     if (indic.length) {
@@ -117,6 +135,35 @@ export function chooseVoice(voices, want) {
   const english = rankVoices(voices, 'en')
   return { voice: english[0] || null, romanise: false,
            quality: english[0] ? describe(english[0]) : 'none' }
+}
+
+/**
+ * Every voice worth offering the listener, best first.
+ *
+ * Both the Devanagari-capable voices and the Indian-English ones, because on
+ * a machine with no Hindi voice the English list is the only choice there is
+ * — and an artisan who prefers one Indian-English voice to another should be
+ * able to say so.
+ */
+export function offerableVoices(voices) {
+  const indic = rankVoices(voices, 'hi')
+  const english = rankVoices(voices, 'en').filter((v) => {
+    const tag = `${v.lang || ''}`.toLowerCase()
+    // Only Indian and neutral-sounding English. A US voice reading romanised
+    // Hindi is the thing this whole feature exists to avoid.
+    return tag.startsWith('en-in') || tag.startsWith('en-gb')
+  })
+  const seen = new Set()
+  return [...indic, ...english].filter((v) => {
+    if (seen.has(v.name)) return false
+    seen.add(v.name)
+    return true
+  }).map((v) => ({
+    name: v.name,
+    lang: v.lang,
+    quality: describe(v),
+    readsHindi: /^(hi|mr|ne|sa)/.test(`${v.lang || ''}`.toLowerCase()),
+  }))
 }
 
 /** A one-word verdict on a voice, for the diagnostic screen. */

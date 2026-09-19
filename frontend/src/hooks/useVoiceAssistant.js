@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { hasDevanagari, toLatin } from '../lib/devanagari'
 import { speakNumbersInHindi } from '../lib/hindiNumbers'
-import { chooseVoice } from '../lib/voices'
+import { chooseVoice, offerableVoices } from '../lib/voices'
 import { MAX_CHUNK, chunkForSpeech } from '../lib/speech'
 
 /**
@@ -30,7 +30,7 @@ import { MAX_CHUNK, chunkForSpeech } from '../lib/speech'
  */
 
 
-export default function useVoiceAssistant({ lang = 'hi', enabled = true } = {}) {
+export default function useVoiceAssistant({ lang = 'hi', enabled = true, voiceName = '' } = {}) {
   const [speaking, setSpeaking] = useState(false)
   const [ready, setReady] = useState(false)
   const [supported] = useState(() => typeof window !== 'undefined' && 'speechSynthesis' in window)
@@ -70,17 +70,29 @@ export default function useVoiceAssistant({ lang = 'hi', enabled = true } = {}) 
    * dies halfway through in front of a judge.
    */
   const stopKeepAlive = useCallback(() => {
-    if (keepAliveRef.current) { clearInterval(keepAliveRef.current); keepAliveRef.current = null }
+    if (keepAliveRef.current) {
+      clearTimeout(keepAliveRef.current)
+      clearInterval(keepAliveRef.current)
+      keepAliveRef.current = null
+    }
   }, [])
 
   const startKeepAlive = useCallback(() => {
     stopKeepAlive()
-    keepAliveRef.current = setInterval(() => {
-      const synth = window.speechSynthesis
-      if (!synth) return
-      if (!synth.speaking && !synth.pending) { stopKeepAlive(); return }
-      try { synth.pause(); synth.resume() } catch { /* not all engines have it */ }
-    }, 9000)
+    // Deliberately delayed, not immediate. pause()/resume() on a voice that
+    // is mid-word produces an audible click, and on some engines a small
+    // stutter — so running it every nine seconds from the start made every
+    // sentence in the app worse in order to rescue the few that run past
+    // Chrome's limit. It now waits until the passage is already longer than
+    // anything that limit would have cut, and only then keeps nudging.
+    keepAliveRef.current = setTimeout(() => {
+      keepAliveRef.current = setInterval(() => {
+        const synth = window.speechSynthesis
+        if (!synth) return
+        if (!synth.speaking && !synth.pending) { stopKeepAlive(); return }
+        try { synth.pause(); synth.resume() } catch { /* not all engines have it */ }
+      }, 9000)
+    }, 12000)
   }, [stopKeepAlive])
 
   const cancel = useCallback(() => {
@@ -100,7 +112,7 @@ export default function useVoiceAssistant({ lang = 'hi', enabled = true } = {}) 
    * that decides the utterance's language tag further down.
    */
   const prepare = useCallback((text, target) => {
-    const { voice, romanise } = chooseVoice(voicesRef.current, target)
+    const { voice, romanise } = chooseVoice(voicesRef.current, target, voiceName)
     if (target !== 'hi' || !romanise || !hasDevanagari(text)) {
       return { spoken: text, romanised: false, voice }
     }
@@ -110,7 +122,7 @@ export default function useVoiceAssistant({ lang = 'hi', enabled = true } = {}) 
     // and landing exactly where it matters, because the numbers in this app
     // are what the artisan is being paid.
     return { spoken: speakNumbersInHindi(toLatin(text)), romanised: true, voice }
-  }, [])
+  }, [voiceName])
 
   const speak = useCallback((text, opts = {}) => {
     if (!supported || !enabled || !text) return
@@ -165,24 +177,27 @@ export default function useVoiceAssistant({ lang = 'hi', enabled = true } = {}) 
       utter.lang = romanised ? (voice?.lang || 'en-IN')
         : (voice?.lang || (target === 'hi' ? 'hi-IN' : 'en-IN'))
 
-      // Pace. Hindi carries more syllables per idea than English, and these
-      // are instructions to somebody who may be hearing a screen read aloud
-      // for the first time. Romanised Hindi is slowed a little further: the
-      // voice is guessing at unfamiliar spellings and rushing them is what
-      // makes it sound like gibberish rather than an accent.
-      const base = target === 'hi' ? (romanised ? 0.88 : 0.92) : 0.98
-      utter.rate = rate ?? base
-      // A touch above neutral carries better on a phone speaker in a noisy
-      // room, which is where this is actually used.
-      utter.pitch = target === 'hi' ? 1.05 : 1
+      // Pace. A Hindi voice is already tuned by its vendor to sound natural
+      // at its own defaults, and every step away from them costs something:
+      // 0.88 dragged, and a raised pitch made a warm voice sound thin. Both
+      // were changed to "improve" the sound and both made it worse. The only
+      // adjustment kept is a small slowdown, because these are instructions
+      // to somebody who may be hearing a screen read aloud for the first
+      // time — and a touch more of it on the romanised path, where the voice
+      // is guessing at unfamiliar spellings.
+      utter.rate = rate ?? (target === 'hi' ? (romanised ? 0.93 : 0.95) : 0.98)
+      utter.pitch = 1
       utter.volume = 1
 
       utter.onstart = () => setSpeaking(true)
       utter.onend = () => {
         if (run !== runRef.current) return
-        // A short gap between pieces is what turns a wall of speech into
-        // sentences. Longer after a full stop than after a comma.
-        setTimeout(sayPiece, /[।.!?]\s*$/.test(piece) ? 240 : 120)
+        // Hand the next piece straight to the engine. The previous version
+        // waited 240ms between sentences to "sound natural"; in practice the
+        // synthesiser already leaves its own pause at a full stop, and adding
+        // another on top is what made a flowing passage sound like it was
+        // being read one line at a time.
+        sayPiece()
       }
       utter.onerror = () => {
         if (run !== runRef.current) return
@@ -196,7 +211,10 @@ export default function useVoiceAssistant({ lang = 'hi', enabled = true } = {}) 
       }
     }
 
-    startKeepAlive()
+    // Only guard against Chrome's cut-off when the passage is long enough to
+    // reach it. Most of what this app says is one or two sentences and is
+    // finished well inside the window.
+    if (pieces.length > 1) startKeepAlive()
     sayPiece()
   }, [supported, enabled, lang, prepare, startKeepAlive, stopKeepAlive])
 
@@ -210,12 +228,15 @@ export default function useVoiceAssistant({ lang = 'hi', enabled = true } = {}) 
   const hindiVoice = useCallback(() => {
     const voices = voicesRef.current
     if (!voices.length) return { mode: 'none', voice: '', lang: '', quality: 'none' }
-    const { voice, romanise, quality } = chooseVoice(voices, 'hi')
+    const { voice, romanise, quality, picked } = chooseVoice(voices, 'hi', voiceName)
     const tag = `${voice?.lang || ''} ${voice?.name || ''}`.toLowerCase()
     const mode = romanise ? 'romanised'
       : (/\bhi[-_]/.test(tag) || tag.includes('hindi')) ? 'native' : 'indic'
-    return { mode, voice: voice?.name || '', lang: voice?.lang || '', quality }
-  }, [])
+    return {
+      mode, voice: voice?.name || '', lang: voice?.lang || '',
+      quality, picked: !!picked, choices: offerableVoices(voices),
+    }
+  }, [voiceName])
 
   // Release anything queued the first time the user touches the screen.
   useEffect(() => {

@@ -20,6 +20,10 @@ export function AppProvider({ children }) {
   const [theme, setTheme] = useState(saved?.theme || 'light')
   const [fontScale, setFontScale] = useState(saved?.fontScale || 1)
   const [contrast, setContrast] = useState(saved?.contrast || 'normal')
+  // The voice the listener picked on this device. Accent is a matter of taste
+  // and of which engine happens to be installed, so the scoring table yields
+  // to an explicit choice.
+  const [voiceName, setVoiceName] = useState(saved?.voiceName || '')
   const [token, setToken] = useState(saved?.token || null)
   const [lang, setLang] = useState(saved?.lang || 'hi')
   const [voiceOn, setVoiceOn] = useState(saved?.voiceOn ?? true)
@@ -29,7 +33,7 @@ export function AppProvider({ children }) {
   const [toasts, setToasts] = useState([])
   const toastId = useRef(0)
 
-  const assistant = useVoiceAssistant({ lang, enabled: voiceOn })
+  const assistant = useVoiceAssistant({ lang, enabled: voiceOn, voiceName })
   const pwa = usePwa()
   // Mounting this here is what starts the outbox watching for the connection
   // to return, app-wide — a listing recorded in a field with no signal sends
@@ -38,9 +42,9 @@ export function AppProvider({ children }) {
 
   useEffect(() => {
     try {
-      localStorage.setItem(STORE_KEY, JSON.stringify({ role, lang, voiceOn, user, theme, token, fontScale, contrast }))
+      localStorage.setItem(STORE_KEY, JSON.stringify({ role, lang, voiceOn, user, theme, token, fontScale, contrast, voiceName}))
     } catch { /* private mode; the app still works, it just forgets */ }
-  }, [role, lang, voiceOn, user, theme, token, fontScale, contrast])
+  }, [role, lang, voiceOn, user, theme, token, fontScale, contrast, voiceName])
 
   // Pull every script up front so the guide can speak with no round trip.
   useEffect(() => {
@@ -215,13 +219,13 @@ export function AppProvider({ children }) {
     user, setUser,
     scripts,
     labels, L,
-    pwa, outboxCount, P,
+    pwa, outboxCount, P, voiceName, setVoiceName,
     assistant,
     say, sayRaw, sayProtected, cancelUnlessProtected,
     toast, toasts,
     t: (hi, en) => (lang === 'hi' ? hi : en),
   }), [role, lang, voiceOn, user, theme, token, toggleTheme, fontScale, contrast,
-       scripts, labels, L, P, pwa, outboxCount, assistant, say, sayRaw, sayProtected,
+       scripts, labels, L, P, pwa, outboxCount, voiceName, assistant, say, sayRaw, sayProtected,
        cancelUnlessProtected, toast, toasts])
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>

@@ -82,12 +82,32 @@ is('a tracking number is left alone',
 is('a leading zero means an identifier, not a count',
    speakNumbersInHindi('order 0042 hai'), 'order 0042 hai')
 
-console.log('\n[chunking, so Chrome does not cut the guide off mid-sentence]')
-const greeting = 'स्वागत है आपका पावहन में। यहाँ हम आपसे सिर्फ़ सामान नहीं लेंगे, '
-  + 'आपको उसका पूरा दाम भी दिलाएँगे। आप बस बोलिए — फोटो खींचिए और बोलकर बता दीजिए कि '
-  + 'यह क्या है, किस चीज़ से बना है, और कितने दिन लगे। बाकी सब मैं कर दूँगा।'
+console.log('\n[chunking, which is a repair and should happen as rarely as possible]')
+
+// Splitting is audible. Every seam is a place the voice restarts, so the
+// first thing to assert is that ordinary speech is NOT split: a chatbot
+// answer, a product line and the welcome greeting all have to come out as
+// one unbroken utterance. Over-eager chunking is what made the guide sound
+// like it was being read one line at a time.
+const oneUtterance = {
+  'a chatbot answer': 'पावहन बिक्री का सिर्फ़ 5% रखता है, और इसके अलावा कोई कटौती नहीं है। '
+    + 'यह हर सामान के पन्ने पर लिखा होता है, खरीदार को भी दिखता है।',
+  'a product line': 'यह वाराणसी में हाथ से बनी है। कीमत 4249 रुपये।',
+  'the welcome greeting': 'स्वागत है आपका पावहन में। यहाँ हम आपसे सिर्फ़ सामान नहीं लेंगे, '
+    + 'आपको उसका पूरा दाम भी दिलाएँगे। आप बस बोलिए — फोटो खींचिए और बोलकर बता दीजिए कि '
+    + 'यह क्या है, किस चीज़ से बना है, और कितने दिन लगे। बाकी सब मैं कर दूँगा।',
+}
+for (const [what, text] of Object.entries(oneUtterance)) {
+  ok(`${what} is spoken in one piece`, chunkForSpeech(text).length === 1,
+     `${text.length} chars`)
+}
+
+// Only genuinely long passages are split, because past Chrome's window the
+// alternative is not hearing the end at all.
+const greeting = Object.values(oneUtterance).join(' ')
 const pieces = chunkForSpeech(greeting)
-ok('a long passage is split', pieces.length >= 2, `${pieces.length} pieces`)
+ok('a passage past the limit is split rather than truncated',
+   pieces.length >= 2, `${greeting.length} chars → ${pieces.length} pieces`)
 ok('no piece is long enough for Chrome to truncate',
    pieces.every((p) => p.length <= MAX_CHUNK),
    `longest ${Math.max(...pieces.map((p) => p.length))} of ${MAX_CHUNK}`)

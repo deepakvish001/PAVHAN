@@ -599,6 +599,69 @@ test it — importing the hook would drag React in — and because the rule it
 encodes, "where does a person pause?", is about language rather than
 components.
 
+## Three "improvements" that made the voice worse
+
+Reported as "the chatbot does not speak Hindi clearly — at the starting point
+it was better". That last clause is the whole bug report: something shipped
+later had made it worse, and it was the commit immediately before, the one
+whose message claimed to make the voice sound like a person.
+
+The text was not at fault. The assistant's Hindi answers contain no English at
+all; every regression was in the delivery.
+
+* **A pause/resume keep-alive running every nine seconds, from the first
+  second.** In Chrome, `pause()` followed by `resume()` on a voice that is
+  mid-word produces an audible click and on some engines a small stutter. It
+  exists to rescue passages that run past Chrome's fifteen-second cut-off — so
+  running it on every utterance in the app damaged hundreds of two-second
+  lines in order to save the handful that needed it. It now waits twelve
+  seconds before starting, by which point anything still speaking is genuinely
+  at risk, and it is armed only when the passage was long enough to be
+  chunked at all.
+
+* **A chunk size of 170 characters.** Ordinary two-sentence answers were being
+  split into separate utterances that would have been spoken perfectly as one.
+  Every split is a seam: the voice stops, restarts, and ramps up again.
+  Chrome's real ceiling is about fifteen seconds, which at a Hindi voice's
+  twenty-odd characters per second is ~300 — so the limit is now 260, and the
+  chatbot answer, the product line and the entire welcome greeting each come
+  out as a single unbroken utterance. The committed test now asserts exactly
+  that, having previously asserted the opposite.
+
+* **A 240ms pause inserted between pieces, and pitch raised to 1.05.** Both
+  were added to "sound natural" and both did the reverse. The synthesiser
+  already leaves its own pause at a full stop; a second one on top is what
+  made a flowing passage sound like it was being read one line at a time. And
+  a neural voice is tuned by its vendor at pitch 1 — raising it made a warm
+  voice sound thin. The rate of 0.88 on the romanised path dragged, too.
+
+The lesson is narrow and worth writing down: every one of these was a
+plausible-sounding adjustment made without listening to the result, and
+together they turned a good voice into a stuttering one. The defaults a voice
+ships with are a considered choice by the people who trained it, and the bar
+for overriding them is higher than "this seems like it would help".
+
+## Accent is the listener's call, not the scoring table's
+
+The other half of the same report asked for a good Indian Hindi accent. The
+ranking in `lib/voices.js` gets the *quality* ordering right — neural over
+local, `hi-IN` over everything, eSpeak last — but which of two good Indian
+voices sounds better is taste, and which voices exist at all differs on every
+machine.
+
+So `chooseVoice` now takes a preferred voice name that wins outright when that
+voice is still installed, `offerableVoices` returns everything worth offering
+(Devanagari-capable voices plus Indian and British English, never American),
+and Profile lists them with a sample button beside each. The label says what
+each will actually do — "speaks Hindi" or "speaks romanised", and natural /
+standard / basic — because nobody can pick a voice from a name. The choice
+persists, and can be handed back to the automatic pick.
+
+The preference also carries the romanise decision with it: choosing an
+Indian-English voice on a device that *has* a Hindi voice switches the text to
+Roman, because the two decisions are one decision and letting them be made
+separately is how they drift apart.
+
 ## The brand was being announced as the word for "wind"
 
 While listening to the recorded utterances, the greeting turned out to say

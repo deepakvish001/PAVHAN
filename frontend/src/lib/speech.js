@@ -10,7 +10,15 @@
 // `onend`. It is a decade-old bug and the only reliable workaround is to
 // break the text into short utterances and keep nudging the queue. Both are
 // done below; this is the length each piece is kept under.
-export const MAX_CHUNK = 170
+// Chrome cuts speech off at roughly fifteen seconds. A Hindi voice at 0.95
+// covers about twenty characters a second, so ~300 characters is the real
+// ceiling and 260 leaves room for a slow voice.
+//
+// The previous value of 170 was cautious to the point of being a bug: it
+// split ordinary two-sentence answers that would have been spoken perfectly
+// as one, and every split is an audible seam. Splitting is a repair, not an
+// improvement — it should happen as rarely as the limit allows.
+export const MAX_CHUNK = 260
 
 /**
  * Split speech into utterance-sized pieces, at the places a person pauses.

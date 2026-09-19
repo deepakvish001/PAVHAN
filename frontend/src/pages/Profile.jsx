@@ -433,6 +433,15 @@ function HindiVoiceNote({ assistant, t, lang, sayRaw }) {
       {info.voice && (
         <div className="muted" style={{ fontSize: 'calc(10.5px * var(--font-scale))', marginTop: 5 }}>
           {t('आवाज़', 'Voice')}: {info.voice} ({info.lang})
+          {info.quality === 'natural' && ` · ${t('बढ़िया गुणवत्ता', 'natural quality')}`}
+          {info.quality === 'basic' && ` · ${t('बुनियादी गुणवत्ता', 'basic quality')}`}
+        </div>
+      )}
+      {info.quality === 'basic' && (
+        <div className="muted" style={{ fontSize: 'calc(11px * var(--font-scale))', marginTop: 5, lineHeight: 1.5 }}
+             lang={lang}>
+          {t('इस डिवाइस पर सिर्फ़ रोबोट जैसी आवाज़ मिली है। क्रोम ब्राउज़र में खोलने पर बेहतर आवाज़ मिलेगी।',
+             'Only a robotic voice was found on this device. Opening PAVHAN in Chrome usually gives a better one.')}
         </div>
       )}
       <button className="btn btn-soft btn-sm" style={{ marginTop: 9 }}

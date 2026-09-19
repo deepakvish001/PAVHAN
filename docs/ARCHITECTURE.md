@@ -536,6 +536,69 @@ transliterator itself has its own test, run by `./run.sh test` before the
 API suite, because on most machines it is the only reason the artisan hears
 anything at all.
 
+## Three things between "it speaks Hindi" and "it sounds good"
+
+Getting Hindi *audible* was the previous fix. Getting it pleasant is a
+different set of problems, and none of them is in the text.
+
+**`getVoices()` is an unordered pile, and the first match is a coin toss.**
+A Chrome Android device commonly carries both "Google हिन्दी" — neural, sounds
+like a person — and an eSpeak Hindi voice that sounds like a 1998 answering
+machine. Both match `hi-IN`. The old `pickVoice` returned whichever came
+first, so quality was decided by array order.
+
+`lib/voices.js` scores instead. Language dominates (a 1000-point base, so a
+great engine on the wrong language still loses to a poor one on the right
+one), then engine reputation: Google, Microsoft "Natural"/"Online", Apple
+"Premium"/"Enhanced" at the top; eSpeak at −80; `localService: false` worth a
+bonus because on every engine that reports it, remote means neural. Named
+voices known to be good — Swara, Madhur, Neerja, Prabhat — get their own
+bonus. For the romanised path `en-IN` beats `en-GB` beats `en-US`, because an
+Indian-English voice says "kaareegar" and "rupaye" close to right and an
+American one does not.
+
+`chooseVoice` returns the voice *and* whether to romanise, deliberately
+together: a device with no Devanagari-capable voice needs both an English
+voice and Roman text, and letting those be decided separately is how they
+drift apart.
+
+**An English voice reads "4249" in English.** On the romanised path that
+lands English digits in the middle of a Hindi sentence, and lands them exactly
+where it matters, because the numbers in this app are the artisan's money.
+`lib/hindiNumbers.js` converts them: "chaar hazaar do sau unachaas". Hindi
+numerals below a hundred are irregular the whole way — 52 is "baavan", not
+derivable from 50 and 2 — so the table is the implementation, and grouping is
+Indian (laakh, karod), never thousands.
+
+The hard part is deciding *what not to convert*. A pincode read as a quantity
+sends a parcel to the wrong state. The rule: comma-grouped numbers are money,
+four digits or fewer is a count or a small price, and a longer bare digit run
+— pincode, AWB, phone number, order id — is left alone, because reading those
+digit-by-digit is correct. A leading zero marks an identifier too.
+
+**Chrome stops speaking after about fifteen seconds and fires no `onend`.**
+The guide goes quiet mid-sentence and never recovers. It is a decade-old bug
+with two halves to the workaround, and both are needed: split the text into
+short utterances (`lib/speech.js`, 170 characters, broken at sentence ends,
+then clause commas, and only then a word boundary — a break mid-clause is
+audible and a break mid-word is a different word), and run a
+pause-and-resume keep-alive while anything is in flight.
+
+The chunking pays twice: the gaps between pieces — 240ms after a full stop,
+120ms after a comma — are the pauses that stop a long passage sounding like it
+is being read off a card.
+
+Chunked playback needs one guard. A passage is a chain of utterances, each
+queueing the next from its `onend`, so a cancelled greeting could otherwise
+resume over the screen the user has already navigated to. `runRef` increments
+on every new passage and on `cancel()`; a chunk whose run id no longer matches
+stops instead of continuing.
+
+`chunkForSpeech` lives in `lib/` rather than in the hook so plain node can
+test it — importing the hook would drag React in — and because the rule it
+encodes, "where does a person pause?", is about language rather than
+components.
+
 ## The brand was being announced as the word for "wind"
 
 While listening to the recorded utterances, the greeting turned out to say

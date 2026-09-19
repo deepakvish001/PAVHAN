@@ -512,9 +512,43 @@ extra syllable is understood where a missing one is not. Numbers, currency
 and Latin words pass through untouched, because an artisan who hears the
 wrong price is worse off than one who hears none.
 
+### Making it sound like a person, not a fault
+
+Three more things decide whether the guide is pleasant to listen to, and all
+three are about the device rather than the text.
+
+**The best voice on the device wins, not the first one that matches.**
+`getVoices()` returns an unordered pile, and the gap between entries is
+enormous: a Chrome Android phone commonly offers both "Google हिन्दी", which
+sounds like a person, and an eSpeak Hindi voice that sounds like a 1998
+answering machine. Taking the first `hi-IN` match is a coin toss between them.
+Every candidate is now scored — neural and cloud voices (Google's, Microsoft's
+"Natural" and "Online" ranges, Apple's "Premium") rank far above local ones,
+eSpeak is heavily penalised, and `hi-IN` beats every other tag for Hindi while
+`en-IN` beats `en-GB` beats `en-US` for the romanised fallback.
+
+**Numbers are spoken in Hindi.** On the romanised path an Indian-English voice
+reads "4249" as "four thousand two hundred forty-nine" — English digits
+landing in the middle of a Hindi sentence, and landing exactly where it
+matters, because the numbers in this app are what the artisan is being paid.
+They now become "chaar hazaar do sau unachaas rupaye", with Indian grouping
+(₹1,85,000 is "ek laakh pachaasee hazaar", never "one hundred eighty-five
+thousand"). A pincode or a tracking number is deliberately left as digits: a
+pincode read as a quantity is wrong in a way that sends a parcel to the wrong
+state.
+
+**Long passages are split at the places a person pauses.** Chrome stops
+speaking after roughly fifteen seconds and fires no `onend`, so the guide
+simply goes quiet mid-sentence and never recovers — a decade-old bug, and a
+spectacular one to hit in front of a judge. Speech is now broken into
+utterances of at most 170 characters at sentence ends, and a pause-and-resume
+keep-alive runs while anything is in flight. The breaks double as natural
+pauses, so a long passage stops sounding like it is being read off a card.
+
 **Profile tells you which mode this device is in**, names the voice being
-used, and has a button to hear it — so "why is the Hindi romanised?" has an
-answer on the screen rather than in a support thread.
+used and rates it (natural / standard / basic), and has a button to hear it —
+so "why is the Hindi romanised?" has an answer on the screen rather than in a
+support thread.
 
 ## Everything is bilingual, including the reasoning
 
